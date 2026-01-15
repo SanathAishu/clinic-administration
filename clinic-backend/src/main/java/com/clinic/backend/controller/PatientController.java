@@ -28,8 +28,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -259,14 +257,13 @@ public class PatientController {
         @ApiResponse(responseCode = "409", description = "Conflict - duplicate email/phone/ABHA ID")
     })
     public ResponseEntity<PatientResponseDTO> createPatient(
-            @Valid @RequestBody CreatePatientRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @Valid @RequestBody CreatePatientRequest request) {
 
         log.debug("POST /api/patients - creating patient: {}", request.getEmail());
 
         UUID tenantId = getCurrentTenantId();
-        UUID userId = UUID.fromString(userDetails.getUsername());
-        User currentUser = userService.getUserById(userId, tenantId);
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        User currentUser = userService.getUserById(currentUserId, tenantId);
 
         // Map request to entity
         Patient patient = patientMapper.toEntity(request);
@@ -355,14 +352,10 @@ public class PatientController {
     // ============================
 
     /**
-     * Get the current tenant ID from TenantContext.
-     * Throws IllegalStateException if tenant context is not set.
+     * Get current tenant ID from security context.
+     * SecurityUtils throws SecurityException if tenant is not set.
      */
     private UUID getCurrentTenantId() {
-        UUID tenantId = SecurityUtils.getCurrentTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not set. Ensure authentication is complete.");
-        }
-        return tenantId;
+        return SecurityUtils.getCurrentTenantId();
     }
 }

@@ -55,11 +55,12 @@ public class UserController {
      * Uses v_user_list view for optimized read with pre-joined role information.
      */
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('USER_READ', 'ADMIN')")
     @Operation(summary = "List all users", description = "Get all users for the current tenant with aggregated role information")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved user list"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Forbidden")
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<UserListViewDTO>> listUsers() {
         UUID tenantId = getTenantId();
@@ -74,11 +75,13 @@ public class UserController {
      * Uses v_user_detail view for complete user profile with roles and permissions.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('USER_READ', 'ADMIN')")
     @Operation(summary = "Get user details", description = "Get complete user profile with roles and permissions hierarchy")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved user details"),
             @ApiResponse(responseCode = "404", description = "User not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<UserDetailViewDTO> getUserDetail(
             @Parameter(description = "User ID") @PathVariable UUID id) {
@@ -95,10 +98,12 @@ public class UserController {
      * Uses v_user_list view filtered by DOCTOR role.
      */
     @GetMapping("/doctors")
+    @PreAuthorize("hasAnyAuthority('USER_READ', 'APPOINTMENT_CREATE', 'ADMIN')")
     @Operation(summary = "List doctors", description = "Get all users with DOCTOR role for the current tenant")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved doctors list"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<UserListViewDTO>> listDoctors() {
         UUID tenantId = getTenantId();
@@ -113,10 +118,12 @@ public class UserController {
      * Uses v_user_list view with ILIKE search.
      */
     @GetMapping("/search")
+    @PreAuthorize("hasAnyAuthority('USER_READ', 'ADMIN')")
     @Operation(summary = "Search users", description = "Search users by name or email (case-insensitive)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved search results"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<UserListViewDTO>> searchUsers(
             @Parameter(description = "Search term for name or email") @RequestParam("q") String searchTerm) {
@@ -322,14 +329,10 @@ public class UserController {
     // ========================================================================
 
     /**
-     * Get current tenant ID from context.
-     * Throws IllegalStateException if tenant context is not set.
+     * Get current tenant ID from security context.
+     * SecurityUtils throws SecurityException if tenant is not set.
      */
     private UUID getTenantId() {
-        UUID tenantId = SecurityUtils.getCurrentTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not set");
-        }
-        return tenantId;
+        return SecurityUtils.getCurrentTenantId();
     }
 }

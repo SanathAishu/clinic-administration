@@ -55,11 +55,12 @@ public class RoleController {
      * Includes both tenant-specific roles and system roles.
      */
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_READ', 'ADMIN')")
     @Operation(summary = "List all roles", description = "Get all roles (tenant-specific and system) with aggregated permission information")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved role list"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Forbidden")
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<RolePermissionsViewDTO>> listRoles() {
         UUID tenantId = getTenantId();
@@ -74,11 +75,13 @@ public class RoleController {
      * Uses v_role_permissions view for complete role profile with permissions.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_READ', 'ADMIN')")
     @Operation(summary = "Get role details", description = "Get complete role profile with permissions")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved role details"),
             @ApiResponse(responseCode = "404", description = "Role not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<RolePermissionsViewDTO> getRoleDetail(
             @Parameter(description = "Role ID") @PathVariable UUID id) {
@@ -95,10 +98,12 @@ public class RoleController {
      * System roles are shared across all tenants.
      */
     @GetMapping("/system")
+    @PreAuthorize("hasAnyAuthority('ROLE_READ', 'ADMIN')")
     @Operation(summary = "List system roles", description = "Get all system roles (shared across tenants)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved system roles"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<RolePermissionsViewDTO>> listSystemRoles() {
         log.debug("Listing system roles");
@@ -111,10 +116,12 @@ public class RoleController {
      * List tenant-specific roles only (excluding system roles).
      */
     @GetMapping("/tenant")
+    @PreAuthorize("hasAnyAuthority('ROLE_READ', 'ADMIN')")
     @Operation(summary = "List tenant roles", description = "Get all tenant-specific roles (excluding system roles)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved tenant roles"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<RolePermissionsViewDTO>> listTenantRoles() {
         UUID tenantId = getTenantId();
@@ -128,10 +135,12 @@ public class RoleController {
      * Search roles by name or description.
      */
     @GetMapping("/search")
+    @PreAuthorize("hasAnyAuthority('ROLE_READ', 'ADMIN')")
     @Operation(summary = "Search roles", description = "Search roles by name or description (case-insensitive)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved search results"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<RolePermissionsViewDTO>> searchRoles(
             @Parameter(description = "Search term for name or description") @RequestParam("q") String searchTerm) {
@@ -321,14 +330,10 @@ public class RoleController {
     // ========================================================================
 
     /**
-     * Get current tenant ID from context.
-     * Throws IllegalStateException if tenant context is not set.
+     * Get current tenant ID from security context.
+     * SecurityUtils throws SecurityException if tenant is not set.
      */
     private UUID getTenantId() {
-        UUID tenantId = SecurityUtils.getCurrentTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not set");
-        }
-        return tenantId;
+        return SecurityUtils.getCurrentTenantId();
     }
 }

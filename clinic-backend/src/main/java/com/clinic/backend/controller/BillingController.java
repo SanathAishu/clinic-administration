@@ -10,6 +10,10 @@ import com.clinic.common.dto.view.BillingSummaryViewDTO;
 import com.clinic.common.dto.view.OverduePaymentViewDTO;
 import com.clinic.common.entity.operational.Billing;
 import com.clinic.backend.security.SecurityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +56,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/billings")
 @RequiredArgsConstructor
+@Tag(name = "Billing", description = "Billing and payment management endpoints")
 public class BillingController {
 
     private final BillingService billingService;
@@ -65,6 +70,13 @@ public class BillingController {
      * Get all billings for current tenant using v_billing_list view.
      */
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "List all billings", description = "Get all billings for the current tenant")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved billing list"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
     public ResponseEntity<List<BillingListViewDTO>> getAllBillings() {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting all billings for tenant: {}", tenantId);
@@ -76,6 +88,13 @@ public class BillingController {
      * Get billing by ID using v_billing_list view.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get billing details", description = "Get billing details by ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved billing"),
+            @ApiResponse(responseCode = "404", description = "Billing not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
     public ResponseEntity<BillingListViewDTO> getBillingById(@PathVariable UUID id) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting billing: {} for tenant: {}", id, tenantId);
@@ -88,6 +107,8 @@ public class BillingController {
      * Get billings for a specific patient.
      */
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get patient billings", description = "Get all billings for a specific patient")
     public ResponseEntity<List<BillingListViewDTO>> getPatientBillings(@PathVariable UUID patientId) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting billings for patient: {}", patientId);
@@ -99,6 +120,8 @@ public class BillingController {
      * Get billings by payment status (PENDING, PAID, PARTIALLY_PAID, CANCELLED, etc.).
      */
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get billings by payment status", description = "Filter billings by payment status")
     public ResponseEntity<List<BillingListViewDTO>> getBillingsByPaymentStatus(@PathVariable String status) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting billings with status: {}", status);
@@ -110,6 +133,8 @@ public class BillingController {
      * Get billings by billing status (FULLY_PAID, PARTIAL, OVERDUE, PENDING).
      */
     @GetMapping("/billing-status/{billingStatus}")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get billings by billing status", description = "Filter billings by billing status")
     public ResponseEntity<List<BillingListViewDTO>> getBillingsByBillingStatus(@PathVariable String billingStatus) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting billings with billing status: {}", billingStatus);
@@ -121,6 +146,8 @@ public class BillingController {
      * Get billings within a date range.
      */
     @GetMapping("/date-range")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get billings by date range", description = "Get billings within a specified date range")
     public ResponseEntity<List<BillingListViewDTO>> getBillingsByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -134,6 +161,8 @@ public class BillingController {
      * Search billings by invoice number or patient name.
      */
     @GetMapping("/search")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Search billings", description = "Search billings by invoice number or patient name")
     public ResponseEntity<List<BillingListViewDTO>> searchBillings(@RequestParam String q) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Searching billings with term: {}", q);
@@ -149,6 +178,8 @@ public class BillingController {
      * Get all overdue payments using v_overdue_payments view.
      */
     @GetMapping("/overdue")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get overdue payments", description = "Get all overdue payments for the tenant")
     public ResponseEntity<List<OverduePaymentViewDTO>> getOverduePayments() {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting overdue payments for tenant: {}", tenantId);
@@ -161,6 +192,8 @@ public class BillingController {
      * Buckets: "0-30 days", "31-60 days", "61-90 days", "90+ days"
      */
     @GetMapping("/overdue/bucket/{bucket}")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get overdue by aging bucket", description = "Get overdue payments filtered by aging bucket")
     public ResponseEntity<List<OverduePaymentViewDTO>> getOverdueByAgingBucket(@PathVariable String bucket) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting overdue payments for bucket: {}", bucket);
@@ -172,6 +205,8 @@ public class BillingController {
      * Get overdue summary (total amount and counts by aging bucket).
      */
     @GetMapping("/overdue/summary")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get overdue summary", description = "Get total overdue amount and counts by aging bucket")
     public ResponseEntity<Map<String, Object>> getOverdueSummary() {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         BigDecimal totalOverdue = billingService.getTotalOverdueAmountView(tenantId);
@@ -191,6 +226,8 @@ public class BillingController {
      * Get monthly billing summary for a specific month.
      */
     @GetMapping("/summary/monthly")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get monthly summary", description = "Get billing summary for a specific month")
     public ResponseEntity<List<BillingSummaryViewDTO>> getMonthlySummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
@@ -203,6 +240,8 @@ public class BillingController {
      * Get billing summary for a range of months.
      */
     @GetMapping("/summary/range")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get summary by month range", description = "Get billing summary for a range of months")
     public ResponseEntity<List<BillingSummaryViewDTO>> getSummaryByMonthRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startMonth,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endMonth) {
@@ -216,6 +255,8 @@ public class BillingController {
      * Get yearly billing summary.
      */
     @GetMapping("/summary/yearly/{year}")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get yearly summary", description = "Get billing summary for a specific year")
     public ResponseEntity<List<BillingSummaryViewDTO>> getYearlySummary(@PathVariable int year) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting yearly summary for: {}", year);
@@ -227,6 +268,8 @@ public class BillingController {
      * Get daily revenue for a month (for charts).
      */
     @GetMapping("/summary/daily")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get daily revenue", description = "Get daily revenue breakdown for a specific month")
     public ResponseEntity<List<BillingSummaryViewDTO>> getDailyRevenueForMonth(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
@@ -239,6 +282,8 @@ public class BillingController {
      * Get current month summary (dashboard widget).
      */
     @GetMapping("/summary/current")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get current month summary", description = "Get billing summary for the current month (dashboard widget)")
     public ResponseEntity<BillingSummaryViewDTO> getCurrentMonthSummary() {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         log.debug("Getting current month summary for tenant: {}", tenantId);
@@ -341,6 +386,8 @@ public class BillingController {
      * Get outstanding balance for a patient.
      */
     @GetMapping("/patient/{patientId}/outstanding")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get patient outstanding balance", description = "Get outstanding balance for a specific patient")
     public ResponseEntity<Map<String, Object>> getPatientOutstandingBalance(@PathVariable UUID patientId) {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         BigDecimal outstanding = billingService.getPatientOutstandingBalance(patientId, tenantId);
@@ -354,6 +401,8 @@ public class BillingController {
      * Get total outstanding balance for tenant.
      */
     @GetMapping("/outstanding/total")
+    @PreAuthorize("hasAnyAuthority('BILLING_READ', 'ADMIN')")
+    @Operation(summary = "Get tenant outstanding balance", description = "Get total outstanding balance for the tenant")
     public ResponseEntity<Map<String, Object>> getTenantOutstandingBalance() {
         UUID tenantId = SecurityUtils.getCurrentTenantId();
         BigDecimal outstanding = billingService.getOutstandingBalanceForTenant(tenantId);

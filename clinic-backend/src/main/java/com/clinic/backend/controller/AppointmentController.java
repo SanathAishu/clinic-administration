@@ -34,6 +34,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -70,13 +71,15 @@ public class AppointmentController {
      * List appointments with pagination (uses v_appointment_list view).
      */
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'APPOINTMENT_LIST', 'ADMIN')")
     @Operation(
             summary = "List appointments",
             description = "Get paginated list of appointments using v_appointment_list view"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved appointments"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<Page<AppointmentListViewDTO>> listAppointments(
             @Parameter(description = "Filter by status")
@@ -102,13 +105,15 @@ public class AppointmentController {
      * Get detailed appointment information (uses v_appointment_detail view).
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'APPOINTMENT_VIEW', 'ADMIN')")
     @Operation(
             summary = "Get appointment details",
             description = "Get detailed appointment information using v_appointment_detail view"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved appointment"),
-            @ApiResponse(responseCode = "404", description = "Appointment not found")
+            @ApiResponse(responseCode = "404", description = "Appointment not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<AppointmentDetailViewDTO> getAppointmentDetail(
             @Parameter(description = "Appointment ID", required = true)
@@ -126,11 +131,15 @@ public class AppointmentController {
      * Get today's appointments for dashboard (uses v_today_appointments view).
      */
     @GetMapping("/today")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'ADMIN')")
     @Operation(
             summary = "Get today's appointments",
             description = "Get today's appointments for dashboard display using v_today_appointments view"
     )
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved today's appointments")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved today's appointments"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
     public ResponseEntity<List<TodayAppointmentViewDTO>> getTodayAppointments() {
 
         UUID tenantId = getTenantId();
@@ -145,13 +154,15 @@ public class AppointmentController {
      * Get appointments for a specific doctor.
      */
     @GetMapping("/doctor/{doctorId}")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'ADMIN')")
     @Operation(
             summary = "Get doctor's appointments",
             description = "Get paginated appointments for a specific doctor"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved doctor's appointments"),
-            @ApiResponse(responseCode = "404", description = "Doctor not found")
+            @ApiResponse(responseCode = "404", description = "Doctor not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<Page<AppointmentListViewDTO>> getDoctorAppointments(
             @Parameter(description = "Doctor ID", required = true)
@@ -175,13 +186,15 @@ public class AppointmentController {
      * Get appointments for a specific patient.
      */
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'ADMIN')")
     @Operation(
             summary = "Get patient's appointments",
             description = "Get paginated appointments for a specific patient"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved patient's appointments"),
-            @ApiResponse(responseCode = "404", description = "Patient not found")
+            @ApiResponse(responseCode = "404", description = "Patient not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<Page<AppointmentListViewDTO>> getPatientAppointments(
             @Parameter(description = "Patient ID", required = true)
@@ -205,6 +218,7 @@ public class AppointmentController {
      * Get available time slots for a doctor on a specific date.
      */
     @GetMapping("/available-slots")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'APPOINTMENT_CREATE', 'ADMIN')")
     @Operation(
             summary = "Get available time slots",
             description = "Calculate available time slots for a doctor on a specific date"
@@ -212,7 +226,8 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved available slots"),
             @ApiResponse(responseCode = "400", description = "Invalid parameters"),
-            @ApiResponse(responseCode = "404", description = "Doctor not found")
+            @ApiResponse(responseCode = "404", description = "Doctor not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
     public ResponseEntity<List<AvailableSlotDTO>> getAvailableSlots(
             @Parameter(description = "Doctor ID", required = true)
@@ -238,6 +253,41 @@ public class AppointmentController {
         return ResponseEntity.ok(slots);
     }
 
+    /**
+     * GET /api/appointments/date-range
+     * Get appointments within a date range.
+     */
+    @GetMapping("/date-range")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_READ', 'ADMIN')")
+    @Operation(
+            summary = "Get appointments by date range",
+            description = "Get paginated appointments within a specified date range"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved appointments"),
+            @ApiResponse(responseCode = "400", description = "Invalid date range"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public ResponseEntity<Page<AppointmentListViewDTO>> getAppointmentsByDateRange(
+            @Parameter(description = "Start date (YYYY-MM-DD)", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "End date (YYYY-MM-DD)", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @PageableDefault(size = 20, sort = "appointmentTime", direction = Sort.Direction.ASC)
+            Pageable pageable) {
+
+        UUID tenantId = getTenantId();
+        log.debug("Fetching appointments from {} to {} for tenant: {}", startDate, endDate, tenantId);
+
+        // Validate date range
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("End date cannot be before start date");
+        }
+
+        Page<AppointmentListViewDTO> appointments = appointmentService.getAppointmentsByDateRange(tenantId, startDate, endDate, pageable);
+        return ResponseEntity.ok(appointments);
+    }
+
     // ================================
     // WRITE Endpoints (Entity-based)
     // ================================
@@ -247,6 +297,7 @@ public class AppointmentController {
      * Create a new appointment.
      */
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_CREATE', 'ADMIN')")
     @Operation(
             summary = "Create appointment",
             description = "Create a new appointment after validating doctor availability"
@@ -255,6 +306,7 @@ public class AppointmentController {
             @ApiResponse(responseCode = "201", description = "Appointment created successfully",
                     content = @Content(schema = @Schema(implementation = AppointmentResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "409", description = "Schedule conflict")
     })
     public ResponseEntity<AppointmentResponseDTO> createAppointment(
@@ -277,9 +329,11 @@ public class AppointmentController {
         appointment.setPatient(patient);
         appointment.setDoctor(doctor);
 
-        // Set created by (in real app, get from security context)
-        // For now, use the doctor as the creator
-        appointment.setCreatedBy(doctor);
+        // Set created by from security context (logged-in user)
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        User currentUser = userRepository.findByIdAndTenantIdAndDeletedAtIsNull(currentUserId, tenantId)
+                .orElseThrow(() -> new IllegalStateException("Current user not found: " + currentUserId));
+        appointment.setCreatedBy(currentUser);
 
         // Create appointment (service handles overlap validation)
         Appointment created = appointmentService.createAppointment(appointment, tenantId);
@@ -293,6 +347,7 @@ public class AppointmentController {
      * Update an existing appointment.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_UPDATE', 'ADMIN')")
     @Operation(
             summary = "Update appointment",
             description = "Update an existing appointment (not allowed for COMPLETED or CANCELLED)"
@@ -300,6 +355,7 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Appointment updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request data or cannot update"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found"),
             @ApiResponse(responseCode = "409", description = "Schedule conflict")
     })
@@ -329,12 +385,14 @@ public class AppointmentController {
      * Soft delete (cancel) an appointment.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_DELETE', 'ADMIN')")
     @Operation(
             summary = "Delete appointment",
             description = "Soft delete (cancel) an appointment"
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Appointment deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
     public ResponseEntity<Void> deleteAppointment(
@@ -357,6 +415,7 @@ public class AppointmentController {
      * Confirm a scheduled appointment.
      */
     @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_UPDATE', 'ADMIN')")
     @Operation(
             summary = "Confirm appointment",
             description = "Transition appointment from SCHEDULED to CONFIRMED"
@@ -364,6 +423,7 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Appointment confirmed"),
             @ApiResponse(responseCode = "400", description = "Invalid status transition"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
     public ResponseEntity<AppointmentResponseDTO> confirmAppointment(
@@ -384,6 +444,7 @@ public class AppointmentController {
      * Start a confirmed appointment (begin consultation).
      */
     @PostMapping("/{id}/start")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_UPDATE', 'ADMIN')")
     @Operation(
             summary = "Start appointment",
             description = "Transition appointment from CONFIRMED to IN_PROGRESS"
@@ -391,6 +452,7 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Appointment started"),
             @ApiResponse(responseCode = "400", description = "Invalid status transition"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
     public ResponseEntity<AppointmentResponseDTO> startAppointment(
@@ -411,6 +473,7 @@ public class AppointmentController {
      * Complete an in-progress appointment.
      */
     @PostMapping("/{id}/complete")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_UPDATE', 'ADMIN')")
     @Operation(
             summary = "Complete appointment",
             description = "Transition appointment from IN_PROGRESS to COMPLETED"
@@ -418,6 +481,7 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Appointment completed"),
             @ApiResponse(responseCode = "400", description = "Invalid status transition"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
     public ResponseEntity<AppointmentResponseDTO> completeAppointment(
@@ -438,6 +502,7 @@ public class AppointmentController {
      * Cancel an appointment with reason.
      */
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_UPDATE', 'ADMIN')")
     @Operation(
             summary = "Cancel appointment",
             description = "Cancel a SCHEDULED or CONFIRMED appointment with reason"
@@ -445,6 +510,7 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Appointment cancelled"),
             @ApiResponse(responseCode = "400", description = "Invalid status transition or missing reason"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
     public ResponseEntity<AppointmentResponseDTO> cancelAppointment(
@@ -455,10 +521,10 @@ public class AppointmentController {
         UUID tenantId = getTenantId();
         log.info("Cancelling appointment: {} in tenant: {} with reason: {}", id, tenantId, request.getReason());
 
-        // Get current user as canceller (in real app, get from security context)
-        // For now, we'll use a placeholder - the appointment's doctor
-        Appointment appointment = appointmentService.getAppointmentById(id, tenantId);
-        User cancelledBy = appointment.getDoctor();
+        // Get current user as canceller from security context
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        User cancelledBy = userRepository.findByIdAndTenantIdAndDeletedAtIsNull(currentUserId, tenantId)
+                .orElseThrow(() -> new IllegalStateException("Current user not found: " + currentUserId));
 
         Appointment cancelled = appointmentService.cancelAppointment(id, tenantId, cancelledBy, request.getReason());
 
@@ -471,6 +537,7 @@ public class AppointmentController {
      * Mark appointment as no-show.
      */
     @PostMapping("/{id}/no-show")
+    @PreAuthorize("hasAnyAuthority('APPOINTMENT_UPDATE', 'ADMIN')")
     @Operation(
             summary = "Mark as no-show",
             description = "Mark a CONFIRMED appointment as NO_SHOW when patient doesn't arrive"
@@ -478,6 +545,7 @@ public class AppointmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Appointment marked as no-show"),
             @ApiResponse(responseCode = "400", description = "Invalid status transition"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Appointment not found")
     })
     public ResponseEntity<AppointmentResponseDTO> markNoShow(
@@ -498,14 +566,10 @@ public class AppointmentController {
     // ================================
 
     /**
-     * Get current tenant ID from TenantContext.
-     * Throws exception if not set.
+     * Get current tenant ID from security context.
+     * SecurityUtils throws SecurityException if tenant is not set.
      */
     private UUID getTenantId() {
-        UUID tenantId = SecurityUtils.getCurrentTenantId();
-        if (tenantId == null) {
-            throw new IllegalStateException("Tenant context not set");
-        }
-        return tenantId;
+        return SecurityUtils.getCurrentTenantId();
     }
 }
