@@ -2,6 +2,7 @@ package com.clinic.backend.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -20,65 +22,94 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-    private final SecretKey secretKey;
-    private final long jwtExpirationMs;
-    private final long refreshExpirationMs;
+    private static final String ISSUER = "clinic-administration";
+    private static final long ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+    private static final long REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000L; // 7 days
 
-    @Value("${clinic.jwt.issuer}")
-    private String issuer;
+    private final SecretKey secretKey;
+
+    @Getter
+    private final long accessTokenExpirationMs;
+
+    @Getter
+    private final long refreshTokenExpirationMs;
 
     public JwtTokenProvider(
             @Value("${clinic.jwt.secret}") String secret,
-            @Value("${clinic.jwt.expiration}") long jwtExpirationMs,
-            @Value("${clinic.jwt.refresh-expiration}") long refreshExpirationMs) {
+            @Value("${clinic.jwt.expiration:#{900000}}") long jwtExpirationMs,
+            @Value("${clinic.jwt.refresh-expiration:#{604800000}}") long refreshExpirationMs) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.jwtExpirationMs = jwtExpirationMs;
-        this.refreshExpirationMs = refreshExpirationMs;
+        // Use 15 min for access token as per requirements (override config if needed)
+        this.accessTokenExpirationMs = ACCESS_TOKEN_EXPIRY_MS;
+        // Use 7 days for refresh token as per requirements
+        this.refreshTokenExpirationMs = REFRESH_TOKEN_EXPIRY_MS;
     }
 
     /**
-     * Generate access token
+     * Token generation result containing both the token and its JTI
      */
-    public String generateAccessToken(Authentication authentication, UUID tenantId) {
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    public record TokenResult(String token, String jti, Instant expiresAt) {}
 
+    /**
+     * Generate access token with JTI for session tracking
+     */
+    public TokenResult generateAccessToken(UserPrincipal userPrincipal, UUID tenantId, List<String> roles) {
         Instant now = Instant.now();
-        Instant expiryDate = now.plus(jwtExpirationMs, ChronoUnit.MILLIS);
+        Instant expiryDate = now.plus(accessTokenExpirationMs, ChronoUnit.MILLIS);
+        String jti = UUID.randomUUID().toString();
 
-        String authorities = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+        String rolesString = roles != null ? String.join(",", roles) : "";
 
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .subject(userPrincipal.getId().toString())
                 .claim("email", userPrincipal.getEmail())
                 .claim("tenantId", tenantId.toString())
-                .claim("authorities", authorities)
-                .claim("jti", UUID.randomUUID().toString())
-                .issuer(issuer)
+                .claim("roles", rolesString)
+                .claim("jti", jti)
+                .issuer(ISSUER)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiryDate))
                 .signWith(secretKey, Jwts.SIG.HS512)
                 .compact();
+
+        return new TokenResult(token, jti, expiryDate);
     }
 
     /**
-     * Generate refresh token
+     * Generate access token from Authentication object
      */
-    public String generateRefreshToken(UUID userId, UUID tenantId) {
-        Instant now = Instant.now();
-        Instant expiryDate = now.plus(refreshExpirationMs, ChronoUnit.MILLIS);
+    public TokenResult generateAccessToken(Authentication authentication, UUID tenantId) {
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        return Jwts.builder()
+        List<String> roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(a -> a.startsWith("ROLE_"))
+                .map(a -> a.substring(5)) // Remove ROLE_ prefix
+                .collect(Collectors.toList());
+
+        return generateAccessToken(userPrincipal, tenantId, roles);
+    }
+
+    /**
+     * Generate refresh token with JTI for session tracking
+     */
+    public TokenResult generateRefreshToken(UUID userId, UUID tenantId) {
+        Instant now = Instant.now();
+        Instant expiryDate = now.plus(refreshTokenExpirationMs, ChronoUnit.MILLIS);
+        String jti = UUID.randomUUID().toString();
+
+        String token = Jwts.builder()
                 .subject(userId.toString())
                 .claim("tenantId", tenantId.toString())
-                .claim("jti", UUID.randomUUID().toString())
+                .claim("jti", jti)
                 .claim("type", "refresh")
-                .issuer(issuer)
+                .issuer(ISSUER)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiryDate))
                 .signWith(secretKey, Jwts.SIG.HS512)
                 .compact();
+
+        return new TokenResult(token, jti, expiryDate);
     }
 
     /**
@@ -155,5 +186,62 @@ public class JwtTokenProvider {
                 .getPayload();
 
         return claims.getExpiration();
+    }
+
+    /**
+     * Get expiration instant from token
+     */
+    public Instant getExpirationInstantFromToken(String token) {
+        return getExpirationDateFromToken(token).toInstant();
+    }
+
+    /**
+     * Get all claims from token
+     */
+    public Claims getAllClaimsFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    /**
+     * Get roles from token
+     */
+    public List<String> getRolesFromToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        String rolesString = claims.get("roles", String.class);
+        if (rolesString == null || rolesString.isEmpty()) {
+            return List.of();
+        }
+        return List.of(rolesString.split(","));
+    }
+
+    /**
+     * Check if token is a refresh token
+     */
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            String type = claims.get("type", String.class);
+            return "refresh".equals(type);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if token is expired (without throwing exception)
+     */
+    public boolean isTokenExpired(String token) {
+        try {
+            Date expiration = getExpirationDateFromToken(token);
+            return expiration.before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (Exception e) {
+            return true;
+        }
     }
 }

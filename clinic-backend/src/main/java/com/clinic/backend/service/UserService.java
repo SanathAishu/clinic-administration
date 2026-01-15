@@ -1,8 +1,13 @@
 package com.clinic.backend.service;
 
+import com.clinic.backend.repository.RoleRepository;
+import com.clinic.backend.repository.UserRepository;
+import com.clinic.backend.repository.UserViewRepository;
+import com.clinic.common.dto.view.UserDetailViewDTO;
+import com.clinic.common.dto.view.UserListViewDTO;
+import com.clinic.common.entity.core.Role;
 import com.clinic.common.entity.core.Tenant;
 import com.clinic.common.entity.core.User;
-import com.clinic.backend.repository.UserRepository;
 import com.clinic.common.enums.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -22,6 +30,8 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final UserViewRepository userViewRepository;
     private final TenantService tenantService;
     private final PasswordEncoder passwordEncoder;
 
@@ -295,5 +305,140 @@ public class UserService {
             throw new IllegalStateException(
                     String.format("Invalid status transition: %s -> %s", current, next));
         }
+    }
+
+    // ========================================================================
+    // CQRS READ OPERATIONS (using database views)
+    // ========================================================================
+
+    /**
+     * Get user list using v_user_list view (CQRS Read)
+     * Returns pre-joined data with aggregated role information.
+     */
+    public List<UserListViewDTO> getUserListView(UUID tenantId) {
+        return userViewRepository.findAllByTenantId(tenantId);
+    }
+
+    /**
+     * Get user detail using v_user_detail view (CQRS Read)
+     * Returns complete user profile with roles and permissions hierarchy.
+     */
+    public Optional<UserDetailViewDTO> getUserDetailView(UUID id, UUID tenantId) {
+        return userViewRepository.findDetailById(id, tenantId);
+    }
+
+    /**
+     * Get doctors list using v_user_list view (CQRS Read)
+     * Filters users with DOCTOR role.
+     */
+    public List<UserListViewDTO> getDoctorsListView(UUID tenantId) {
+        return userViewRepository.findDoctorsByTenantId(tenantId);
+    }
+
+    /**
+     * Search users using v_user_list view (CQRS Read)
+     * Searches by name or email.
+     */
+    public List<UserListViewDTO> searchUsersView(UUID tenantId, String searchTerm) {
+        return userViewRepository.searchByTenantId(tenantId, searchTerm);
+    }
+
+    /**
+     * Get users by status using view (CQRS Read)
+     */
+    public List<UserListViewDTO> getUsersByStatusView(UUID tenantId, UserStatus status) {
+        return userViewRepository.findByTenantIdAndStatus(tenantId, status);
+    }
+
+    /**
+     * Get locked users using view (CQRS Read)
+     */
+    public List<UserListViewDTO> getLockedUsersView(UUID tenantId) {
+        return userViewRepository.findLockedByTenantId(tenantId);
+    }
+
+    // ========================================================================
+    // ROLE ASSIGNMENT OPERATIONS
+    // ========================================================================
+
+    /**
+     * Assign roles to user (Set operation: union)
+     * Adds roles to user's existing role set.
+     */
+    @Transactional
+    public User assignRolesToUser(UUID userId, UUID tenantId, Set<UUID> roleIds) {
+        User user = getUserById(userId, tenantId);
+
+        // Validate all roles exist and belong to tenant (or are system roles)
+        Set<Role> rolesToAssign = roleIds.stream()
+                .map(roleId -> roleRepository.findById(roleId)
+                        .filter(role -> role.getDeletedAt() == null)
+                        .filter(role -> Boolean.TRUE.equals(role.getIsSystemRole()) ||
+                                        tenantId.equals(role.getTenantId()))
+                        .orElseThrow(() -> new IllegalArgumentException("Role not found or not accessible: " + roleId)))
+                .collect(Collectors.toSet());
+
+        // Add roles (Set union - idempotent)
+        user.getRoles().addAll(rolesToAssign);
+
+        User saved = userRepository.save(user);
+        log.info("Assigned {} roles to user {}", rolesToAssign.size(), userId);
+        return saved;
+    }
+
+    /**
+     * Remove role from user (Set operation: difference)
+     */
+    @Transactional
+    public User removeRoleFromUser(UUID userId, UUID tenantId, UUID roleId) {
+        User user = getUserById(userId, tenantId);
+
+        Role role = roleRepository.findById(roleId)
+                .filter(r -> r.getDeletedAt() == null)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleId));
+
+        // Remove role (Set difference - idempotent)
+        boolean removed = user.getRoles().remove(role);
+        if (!removed) {
+            log.debug("Role {} was not assigned to user {}", roleId, userId);
+        }
+
+        User saved = userRepository.save(user);
+        log.info("Removed role {} from user {}", roleId, userId);
+        return saved;
+    }
+
+    /**
+     * Replace all user roles (Set replacement)
+     */
+    @Transactional
+    public User setUserRoles(UUID userId, UUID tenantId, Set<UUID> roleIds) {
+        User user = getUserById(userId, tenantId);
+
+        // Validate all roles exist and belong to tenant (or are system roles)
+        Set<Role> newRoles = roleIds.stream()
+                .map(roleId -> roleRepository.findById(roleId)
+                        .filter(role -> role.getDeletedAt() == null)
+                        .filter(role -> Boolean.TRUE.equals(role.getIsSystemRole()) ||
+                                        tenantId.equals(role.getTenantId()))
+                        .orElseThrow(() -> new IllegalArgumentException("Role not found or not accessible: " + roleId)))
+                .collect(Collectors.toSet());
+
+        // Replace role set
+        user.getRoles().clear();
+        user.getRoles().addAll(newRoles);
+
+        User saved = userRepository.save(user);
+        log.info("Set {} roles for user {}", newRoles.size(), userId);
+        return saved;
+    }
+
+    /**
+     * Create user with password hashing from plain text password
+     */
+    @Transactional
+    public User createUserWithPassword(User user, String plainPassword, UUID tenantId) {
+        user.setPasswordHash(plainPassword);
+        return createUser(user, tenantId);
     }
 }

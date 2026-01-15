@@ -1,9 +1,12 @@
 package com.clinic.backend.service;
 
+import com.clinic.backend.repository.PermissionRepository;
+import com.clinic.backend.repository.RoleRepository;
+import com.clinic.backend.repository.RoleViewRepository;
+import com.clinic.common.dto.view.RolePermissionsViewDTO;
 import com.clinic.common.entity.core.Permission;
 import com.clinic.common.entity.core.Role;
 import com.clinic.common.entity.core.User;
-import com.clinic.backend.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -21,6 +26,8 @@ import java.util.UUID;
 public class RoleService {
 
     private final RoleRepository roleRepository;
+    private final RoleViewRepository roleViewRepository;
+    private final PermissionRepository permissionRepository;
 
     /**
      * Create new role (Injective function within tenant: (name, tenantId) → role)
@@ -269,5 +276,140 @@ public class RoleService {
      */
     public long countRolesForTenant(UUID tenantId) {
         return roleRepository.countByTenantIdAndDeletedAtIsNull(tenantId);
+    }
+
+    // ========================================================================
+    // CQRS READ OPERATIONS (using database views)
+    // ========================================================================
+
+    /**
+     * Get role list using v_role_permissions view (CQRS Read)
+     * Returns roles with pre-aggregated permission information.
+     */
+    public List<RolePermissionsViewDTO> getRoleListView(UUID tenantId) {
+        return roleViewRepository.findAllByTenantId(tenantId);
+    }
+
+    /**
+     * Get role detail using v_role_permissions view (CQRS Read)
+     * Returns complete role profile with permissions.
+     */
+    public Optional<RolePermissionsViewDTO> getRoleDetailView(UUID id, UUID tenantId) {
+        return roleViewRepository.findDetailById(id, tenantId);
+    }
+
+    /**
+     * Get system roles using view (CQRS Read)
+     */
+    public List<RolePermissionsViewDTO> getSystemRolesView() {
+        return roleViewRepository.findSystemRoles();
+    }
+
+    /**
+     * Get tenant-specific roles using view (CQRS Read)
+     */
+    public List<RolePermissionsViewDTO> getTenantRolesView(UUID tenantId) {
+        return roleViewRepository.findTenantRoles(tenantId);
+    }
+
+    /**
+     * Search roles using view (CQRS Read)
+     */
+    public List<RolePermissionsViewDTO> searchRolesView(UUID tenantId, String searchTerm) {
+        return roleViewRepository.searchByTenantId(tenantId, searchTerm);
+    }
+
+    // ========================================================================
+    // PERMISSION ASSIGNMENT OPERATIONS
+    // ========================================================================
+
+    /**
+     * Assign permissions to role by IDs (Set operation: union)
+     */
+    @Transactional
+    public Role assignPermissionsToRole(UUID roleId, UUID tenantId, Set<UUID> permissionIds) {
+        Role role = getRoleById(roleId, tenantId);
+
+        // Cannot modify system roles
+        if (Boolean.TRUE.equals(role.getIsSystemRole())) {
+            throw new IllegalStateException("Cannot modify system role: " + role.getName());
+        }
+
+        // Validate all permissions exist
+        Set<Permission> permissionsToAssign = permissionIds.stream()
+                .map(permId -> permissionRepository.findById(permId)
+                        .orElseThrow(() -> new IllegalArgumentException("Permission not found: " + permId)))
+                .collect(Collectors.toSet());
+
+        // Add permissions (Set union - idempotent)
+        role.getPermissions().addAll(permissionsToAssign);
+
+        Role saved = roleRepository.save(role);
+        log.info("Assigned {} permissions to role {}", permissionsToAssign.size(), roleId);
+        return saved;
+    }
+
+    /**
+     * Remove permission from role by ID
+     */
+    @Transactional
+    public Role removePermissionFromRoleById(UUID roleId, UUID tenantId, UUID permissionId) {
+        Role role = getRoleById(roleId, tenantId);
+
+        // Cannot modify system roles
+        if (Boolean.TRUE.equals(role.getIsSystemRole())) {
+            throw new IllegalStateException("Cannot modify system role: " + role.getName());
+        }
+
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new IllegalArgumentException("Permission not found: " + permissionId));
+
+        // Remove permission (Set difference - idempotent)
+        boolean removed = role.getPermissions().remove(permission);
+        if (!removed) {
+            log.debug("Permission {} was not assigned to role {}", permissionId, roleId);
+        }
+
+        Role saved = roleRepository.save(role);
+        log.info("Removed permission {} from role {}", permissionId, roleId);
+        return saved;
+    }
+
+    /**
+     * Replace all role permissions by IDs (Set replacement)
+     */
+    @Transactional
+    public Role setRolePermissionsByIds(UUID roleId, UUID tenantId, Set<UUID> permissionIds) {
+        Role role = getRoleById(roleId, tenantId);
+
+        // Cannot modify system roles
+        if (Boolean.TRUE.equals(role.getIsSystemRole())) {
+            throw new IllegalStateException("Cannot modify system role: " + role.getName());
+        }
+
+        // Validate all permissions exist
+        Set<Permission> newPermissions = permissionIds.stream()
+                .map(permId -> permissionRepository.findById(permId)
+                        .orElseThrow(() -> new IllegalArgumentException("Permission not found: " + permId)))
+                .collect(Collectors.toSet());
+
+        // Replace permission set
+        role.getPermissions().clear();
+        role.getPermissions().addAll(newPermissions);
+
+        Role saved = roleRepository.save(role);
+        log.info("Set {} permissions for role {}", newPermissions.size(), roleId);
+        return saved;
+    }
+
+    /**
+     * Get role by ID, allowing system roles regardless of tenant
+     */
+    public Role getRoleByIdIncludingSystemRoles(UUID id, UUID tenantId) {
+        return roleRepository.findById(id)
+                .filter(role -> role.getDeletedAt() == null)
+                .filter(role -> Boolean.TRUE.equals(role.getIsSystemRole()) ||
+                               tenantId.equals(role.getTenantId()))
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + id));
     }
 }
