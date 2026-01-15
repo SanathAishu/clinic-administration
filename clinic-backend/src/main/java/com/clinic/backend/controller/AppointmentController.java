@@ -16,7 +16,7 @@ import com.clinic.common.entity.clinical.Appointment;
 import com.clinic.common.entity.core.User;
 import com.clinic.common.entity.patient.Patient;
 import com.clinic.common.enums.AppointmentStatus;
-import com.clinic.common.security.TenantContext;
+import com.clinic.backend.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -502,7 +502,7 @@ public class AppointmentController {
      * Throws exception if not set.
      */
     private UUID getTenantId() {
-        UUID tenantId = TenantContext.getCurrentTenant();
+        UUID tenantId = SecurityUtils.getCurrentTenantId();
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not set");
         }

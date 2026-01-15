@@ -88,14 +88,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 log.debug("Set authentication for user: {} in tenant: {}", userId, tenantId);
             }
+
+            filterChain.doFilter(request, response);
+
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context: {}", ex.getMessage());
             // Clear any partial context on error
             TenantContext.clear();
             SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
+        } finally {
+            // CRITICAL: Always clear TenantContext after request to prevent thread-local leaks
+            TenantContext.clear();
         }
-
-        filterChain.doFilter(request, response);
     }
 
     /**

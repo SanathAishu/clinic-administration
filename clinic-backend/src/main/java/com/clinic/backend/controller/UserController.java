@@ -10,7 +10,7 @@ import com.clinic.common.dto.response.UserResponseDTO;
 import com.clinic.common.dto.view.UserDetailViewDTO;
 import com.clinic.common.dto.view.UserListViewDTO;
 import com.clinic.common.entity.core.User;
-import com.clinic.common.security.TenantContext;
+import com.clinic.backend.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -326,7 +326,7 @@ public class UserController {
      * Throws IllegalStateException if tenant context is not set.
      */
     private UUID getTenantId() {
-        UUID tenantId = TenantContext.getCurrentTenant();
+        UUID tenantId = SecurityUtils.getCurrentTenantId();
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not set");
         }

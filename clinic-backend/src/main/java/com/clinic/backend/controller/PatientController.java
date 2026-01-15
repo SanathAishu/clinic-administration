@@ -10,7 +10,7 @@ import com.clinic.common.dto.response.PatientResponseDTO;
 import com.clinic.common.dto.view.*;
 import com.clinic.common.entity.core.User;
 import com.clinic.common.entity.patient.Patient;
-import com.clinic.common.security.TenantContext;
+import com.clinic.backend.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -359,7 +359,7 @@ public class PatientController {
      * Throws IllegalStateException if tenant context is not set.
      */
     private UUID getCurrentTenantId() {
-        UUID tenantId = TenantContext.getCurrentTenant();
+        UUID tenantId = SecurityUtils.getCurrentTenantId();
         if (tenantId == null) {
             throw new IllegalStateException("Tenant context not set. Ensure authentication is complete.");
         }
