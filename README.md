@@ -2,20 +2,35 @@
 
 A comprehensive, multi-tenant clinic management system for the Indian healthcare market with DPDP Act 2023 compliance, ABDM integration, and production-ready architecture.
 
+## 📚 Documentation
+
+**Complete documentation is available in the [`docs/`](docs/) directory:**
+
+- **[Getting Started Guide](docs/README.md)** - Start here for comprehensive documentation
+- **[Database Setup](docs/database/setup.md)** - PostgreSQL configuration and access
+- **[Database Migrations](docs/database/migrations.md)** - Flyway migration guide
+- **[Materialized Views](docs/database/materialized-views/)** - Performance optimization (Phase 1 complete ✅)
+- **[Read Views (CQRS)](docs/database/read-views.md)** - 26 database views for optimized READ operations ✅
+
+---
+
 ## Features
 
 - Multi-tenant SaaS architecture with Row Level Security (RLS)
+- **Materialized Views** - Phase 1 complete with 90-95% query performance improvement ✅
+- **CQRS Read Views** - 26 database views for optimized READ operations ✅
 - DPDP Act 2023, IT Act 2000, and ABDM compliance
 - ABHA ID integration (Ayushman Bharat Health Account)
 - Comprehensive patient care workflow
 - Inventory and billing management
 - Role-based access control (RBAC) with fine-grained permissions
 - JWT-based authentication with session management
-- Audit logging with 7-year retention
+- Audit logging with 7-year retention (partitioned by month)
 - Real-time notifications
 - Document management with MinIO (S3-compatible)
 - Monitoring with Prometheus & Grafana
 - Centralized logging with ELK Stack
+- Automated scheduled refresh for materialized views
 
 ## Technology Stack
 

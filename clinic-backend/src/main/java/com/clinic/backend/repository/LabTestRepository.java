@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.LabTest;
+import com.clinic.common.entity.clinical.LabTest;
 import com.clinic.common.enums.LabTestStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,4 +72,20 @@ public interface LabTestRepository extends JpaRepository<LabTest, UUID> {
     long countByTenantIdAndStatusAndDeletedAtIsNull(UUID tenantId, LabTestStatus status);
 
     long countByPatientIdAndTenantIdAndDeletedAtIsNull(UUID patientId, UUID tenantId);
+
+    // Additional methods for service
+    @Query("SELECT l FROM LabTest l WHERE l.patient.id = :patientId AND l.tenantId = :tenantId AND " +
+           "l.deletedAt IS NULL ORDER BY l.orderedAt DESC")
+    Page<LabTest> findByPatientIdAndTenantIdAndDeletedAtIsNull(@Param("patientId") UUID patientId,
+                                                                @Param("tenantId") UUID tenantId,
+                                                                Pageable pageable);
+
+    @Query("SELECT l FROM LabTest l WHERE l.orderedBy.id = :doctorId AND l.tenantId = :tenantId AND l.deletedAt IS NULL")
+    List<LabTest> findByOrderedByIdAndTenantId(@Param("doctorId") UUID doctorId, @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT l FROM LabTest l WHERE l.tenantId = :tenantId AND l.status IN ('ORDERED', 'SAMPLE_COLLECTED', 'IN_PROGRESS') AND l.deletedAt IS NULL")
+    List<LabTest> findPendingLabTests(@Param("tenantId") UUID tenantId);
+
+    @Query("SELECT COUNT(l) FROM LabTest l WHERE l.patient.id = :patientId AND l.tenantId = :tenantId AND l.deletedAt IS NULL")
+    long countByPatientIdAndTenantId(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 }

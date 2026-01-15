@@ -1,5 +1,6 @@
 package com.clinic.backend.security;
 
+import com.clinic.common.security.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

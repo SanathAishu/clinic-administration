@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.PatientDocument;
+import com.clinic.common.entity.patient.PatientDocument;
 import com.clinic.common.enums.DocumentType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,10 +29,18 @@ public interface PatientDocumentRepository extends JpaRepository<PatientDocument
                                                 @Param("tenantId") UUID tenantId,
                                                 Pageable pageable);
 
+    @Query("SELECT pd FROM PatientDocument pd WHERE pd.patient.id = :patientId AND pd.tenantId = :tenantId AND " +
+           "pd.deletedAt IS NULL ORDER BY pd.uploadedAt DESC")
+    Page<PatientDocument> findByPatientIdAndTenantIdAndDeletedAtIsNull(@Param("patientId") UUID patientId,
+                                                                        @Param("tenantId") UUID tenantId,
+                                                                        Pageable pageable);
+
     List<PatientDocument> findByPatientIdAndTenantIdAndDeletedAtIsNullOrderByUploadedAtDesc(UUID patientId, UUID tenantId);
 
     // Document type queries
     List<PatientDocument> findByPatientIdAndTenantIdAndDocumentTypeAndDeletedAtIsNull(UUID patientId, UUID tenantId, DocumentType documentType);
+
+    List<PatientDocument> findByPatientIdAndDocumentTypeAndTenantId(UUID patientId, DocumentType documentType, UUID tenantId);
 
     @Query("SELECT pd FROM PatientDocument pd WHERE pd.tenantId = :tenantId AND pd.documentType = :type AND " +
            "pd.deletedAt IS NULL ORDER BY pd.uploadedAt DESC")
@@ -106,8 +114,16 @@ public interface PatientDocumentRepository extends JpaRepository<PatientDocument
            "pd.deletedAt IS NULL ORDER BY pd.uploadedAt DESC")
     List<PatientDocument> findRecentDocuments(@Param("tenantId") UUID tenantId, @Param("since") Instant since);
 
+    @Query("SELECT pd FROM PatientDocument pd WHERE pd.patient.id = :patientId AND pd.tenantId = :tenantId AND " +
+           "pd.uploadedAt >= :since AND pd.deletedAt IS NULL ORDER BY pd.uploadedAt DESC")
+    List<PatientDocument> findRecentDocumentsForPatient(@Param("patientId") UUID patientId,
+                                                         @Param("tenantId") UUID tenantId,
+                                                         @Param("since") Instant since);
+
     // Counting
     long countByPatientIdAndTenantIdAndDeletedAtIsNull(UUID patientId, UUID tenantId);
+
+    long countByPatientIdAndTenantId(UUID patientId, UUID tenantId);
 
     long countByPatientIdAndTenantIdAndDocumentTypeAndDeletedAtIsNull(UUID patientId, UUID tenantId, DocumentType documentType);
 }

@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.Prescription;
+import com.clinic.common.entity.clinical.Prescription;
 import com.clinic.common.enums.PrescriptionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +29,12 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
                                                  @Param("tenantId") UUID tenantId,
                                                  Pageable pageable);
 
+    @Query("SELECT p FROM Prescription p WHERE p.patient.id = :patientId AND p.tenantId = :tenantId AND " +
+           "p.deletedAt IS NULL ORDER BY p.prescriptionDate DESC")
+    Page<Prescription> findByPatientIdAndTenantIdAndDeletedAtIsNull(@Param("patientId") UUID patientId,
+                                                                     @Param("tenantId") UUID tenantId,
+                                                                     Pageable pageable);
+
     List<Prescription> findByPatientIdAndTenantIdAndStatusAndDeletedAtIsNull(UUID patientId, UUID tenantId, PrescriptionStatus status);
 
     // Medical record prescriptions
@@ -40,6 +46,10 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
     Page<Prescription> findByDoctorId(@Param("doctorId") UUID doctorId,
                                        @Param("tenantId") UUID tenantId,
                                        Pageable pageable);
+
+    @Query("SELECT p FROM Prescription p WHERE p.doctor.id = :doctorId AND p.tenantId = :tenantId AND " +
+           "p.deletedAt IS NULL ORDER BY p.prescriptionDate DESC")
+    List<Prescription> findByDoctorIdAndTenantId(@Param("doctorId") UUID doctorId, @Param("tenantId") UUID tenantId);
 
     // Status-based queries
     List<Prescription> findByTenantIdAndStatusAndDeletedAtIsNull(UUID tenantId, PrescriptionStatus status);
@@ -66,4 +76,7 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
 
     // Counting
     long countByPatientIdAndTenantIdAndStatusAndDeletedAtIsNull(UUID patientId, UUID tenantId, PrescriptionStatus status);
+
+    @Query("SELECT COUNT(p) FROM Prescription p WHERE p.patient.id = :patientId AND p.tenantId = :tenantId AND p.deletedAt IS NULL")
+    long countByPatientIdAndTenantId(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 }

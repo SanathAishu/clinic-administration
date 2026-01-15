@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.Tenant;
+import com.clinic.common.entity.core.Tenant;
 import com.clinic.common.enums.TenantStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

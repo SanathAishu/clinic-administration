@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.Inventory;
+import com.clinic.common.entity.operational.Inventory;
 import com.clinic.common.enums.InventoryCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

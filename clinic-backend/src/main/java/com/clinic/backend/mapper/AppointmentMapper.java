@@ -1,0 +1,56 @@
+package com.clinic.backend.mapper;
+
+import com.clinic.common.dto.request.CreateAppointmentRequest;
+import com.clinic.common.dto.request.UpdateAppointmentRequest;
+import com.clinic.common.dto.response.AppointmentResponseDTO;
+import com.clinic.common.entity.clinical.Appointment;
+import org.mapstruct.*;
+
+import java.util.List;
+
+@Mapper(componentModel = "spring")
+public interface AppointmentMapper {
+
+    @Mapping(target = "patientId", source = "patient.id")
+    @Mapping(target = "patientName", expression = "java(appointment.getPatient().getFullName())")
+    @Mapping(target = "doctorId", source = "doctor.id")
+    @Mapping(target = "doctorName", expression = "java(appointment.getDoctor().getFullName())")
+    @Mapping(target = "endTime", expression = "java(appointment.getEndTime())")
+    @Mapping(target = "cancelledById", source = "cancelledBy.id")
+    @Mapping(target = "cancelledByName", expression = "java(appointment.getCancelledBy() != null ? appointment.getCancelledBy().getFullName() : null)")
+    @Mapping(target = "createdById", source = "createdBy.id")
+    @Mapping(target = "createdByName", expression = "java(appointment.getCreatedBy().getFullName())")
+    AppointmentResponseDTO toResponseDTO(Appointment appointment);
+
+    List<AppointmentResponseDTO> toResponseDTOList(List<Appointment> appointments);
+
+    @Mapping(target = "patient", ignore = true) // Will be set by service from patientId
+    @Mapping(target = "doctor", ignore = true) // Will be set by service from doctorId
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "confirmedAt", ignore = true)
+    @Mapping(target = "startedAt", ignore = true)
+    @Mapping(target = "completedAt", ignore = true)
+    @Mapping(target = "cancelledAt", ignore = true)
+    @Mapping(target = "cancelledBy", ignore = true)
+    @Mapping(target = "cancellationReason", ignore = true)
+    @Mapping(target = "createdBy", ignore = true) // Will be set by service
+    Appointment toEntity(CreateAppointmentRequest request);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "patient", ignore = true) // Will be set by service if patientId is provided
+    @Mapping(target = "doctor", ignore = true) // Will be set by service if doctorId is provided
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "confirmedAt", ignore = true)
+    @Mapping(target = "startedAt", ignore = true)
+    @Mapping(target = "completedAt", ignore = true)
+    @Mapping(target = "cancelledAt", ignore = true)
+    @Mapping(target = "cancelledBy", ignore = true)
+    @Mapping(target = "cancellationReason", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "tenantId", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    void updateEntityFromRequest(UpdateAppointmentRequest request, @MappingTarget Appointment appointment);
+}

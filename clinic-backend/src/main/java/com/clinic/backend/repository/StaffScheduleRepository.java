@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.StaffSchedule;
+import com.clinic.common.entity.operational.StaffSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -86,4 +86,47 @@ public interface StaffScheduleRepository extends JpaRepository<StaffSchedule, UU
 
     // Counting
     long countByUserIdAndTenantIdAndDeletedAtIsNull(UUID userId, UUID tenantId);
+
+    // Additional methods for service (note: service uses "staff" terminology but entity uses "user")
+    @Query("SELECT s FROM StaffSchedule s WHERE s.user.id = :staffId AND s.tenantId = :tenantId AND " +
+           "s.deletedAt IS NULL ORDER BY s.validFrom DESC")
+    org.springframework.data.domain.Page<StaffSchedule> findByStaffIdAndTenantIdAndDeletedAtIsNull(
+            @Param("staffId") UUID staffId,
+            @Param("tenantId") UUID tenantId,
+            org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT s FROM StaffSchedule s WHERE s.user.id = :staffId AND s.tenantId = :tenantId AND " +
+           "s.validFrom <= :date AND (s.validUntil IS NULL OR s.validUntil >= :date) AND " +
+           "s.isAvailable = true AND s.deletedAt IS NULL")
+    List<StaffSchedule> findActiveSchedulesForStaff(@Param("staffId") UUID staffId,
+                                                     @Param("tenantId") UUID tenantId,
+                                                     @Param("date") LocalDate date);
+
+    @Query("SELECT s FROM StaffSchedule s WHERE s.tenantId = :tenantId AND CAST(s.dayOfWeek AS string) = :dayOfWeek AND " +
+           "s.validFrom <= :date AND (s.validUntil IS NULL OR s.validUntil >= :date) AND " +
+           "s.isAvailable = true AND s.deletedAt IS NULL")
+    List<StaffSchedule> findAvailableStaffForDay(@Param("tenantId") UUID tenantId,
+                                                  @Param("dayOfWeek") String dayOfWeek,
+                                                  @Param("date") LocalDate date);
+
+    @Query("SELECT s FROM StaffSchedule s WHERE s.tenantId = :tenantId AND CAST(s.dayOfWeek AS string) = :dayOfWeek AND " +
+           "s.deletedAt IS NULL ORDER BY s.startTime ASC")
+    List<StaffSchedule> findByTenantIdAndDayOfWeek(@Param("tenantId") UUID tenantId, @Param("dayOfWeek") String dayOfWeek);
+
+    @Query("SELECT COUNT(s) FROM StaffSchedule s WHERE s.user.id = :staffId AND s.tenantId = :tenantId AND " +
+           "CAST(s.dayOfWeek AS string) = CAST(:dayOfWeek AS string) AND " +
+           "s.validFrom <= :validUntil AND (s.validUntil IS NULL OR s.validUntil >= :validFrom) AND " +
+           "((s.startTime < :endTime AND s.endTime > :startTime)) AND " +
+           "s.isAvailable = true AND s.deletedAt IS NULL AND s.id != :excludeId")
+    long countOverlappingSchedules(@Param("staffId") UUID staffId,
+                                    @Param("tenantId") UUID tenantId,
+                                    @Param("dayOfWeek") String dayOfWeek,
+                                    @Param("startTime") LocalTime startTime,
+                                    @Param("endTime") LocalTime endTime,
+                                    @Param("validFrom") LocalDate validFrom,
+                                    @Param("validUntil") LocalDate validUntil,
+                                    @Param("excludeId") UUID excludeId);
+
+    @Query("SELECT COUNT(s) FROM StaffSchedule s WHERE s.user.id = :staffId AND s.tenantId = :tenantId AND s.deletedAt IS NULL")
+    long countByStaffIdAndTenantId(@Param("staffId") UUID staffId, @Param("tenantId") UUID tenantId);
 }

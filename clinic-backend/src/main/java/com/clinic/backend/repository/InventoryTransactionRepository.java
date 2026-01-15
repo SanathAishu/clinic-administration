@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.InventoryTransaction;
+import com.clinic.common.entity.operational.InventoryTransaction;
 import com.clinic.common.enums.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -85,4 +85,18 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
     long countByInventoryIdAndTenantId(UUID inventoryId, UUID tenantId);
 
     long countByTenantIdAndTransactionType(UUID tenantId, TransactionType transactionType);
+
+    // Additional methods for service
+    @Query("SELECT it FROM InventoryTransaction it WHERE it.id = :id AND it.tenantId = :tenantId")
+    java.util.Optional<InventoryTransaction> findByIdAndTenantId(@Param("id") UUID id, @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT it FROM InventoryTransaction it WHERE it.inventory.id = :inventoryId AND it.tenantId = :tenantId " +
+           "ORDER BY it.transactionDate DESC")
+    Page<InventoryTransaction> findByInventoryIdAndTenantId(@Param("inventoryId") UUID inventoryId,
+                                                             @Param("tenantId") UUID tenantId,
+                                                             Pageable pageable);
+
+    @Query("SELECT it FROM InventoryTransaction it WHERE it.performedBy.id = :userId AND it.tenantId = :tenantId " +
+           "ORDER BY it.transactionDate DESC")
+    List<InventoryTransaction> findByPerformedByIdAndTenantId(@Param("userId") UUID userId, @Param("tenantId") UUID tenantId);
 }

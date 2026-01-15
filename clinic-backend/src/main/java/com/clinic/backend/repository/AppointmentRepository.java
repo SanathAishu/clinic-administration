@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.Appointment;
+import com.clinic.common.entity.clinical.Appointment;
 import com.clinic.common.enums.AppointmentStatus;
 import com.clinic.common.enums.ConsultationType;
 import org.springframework.data.domain.Page;

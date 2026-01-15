@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.ConsentRecord;
+import com.clinic.common.entity.clinical.ConsentRecord;
 import com.clinic.common.enums.ConsentStatus;
 import com.clinic.common.enums.ConsentType;
 import org.springframework.data.domain.Page;
@@ -47,12 +47,12 @@ public interface ConsentRecordRepository extends JpaRepository<ConsentRecord, UU
                                       @Param("status") ConsentStatus status,
                                       Pageable pageable);
 
-    // Active consents (not revoked, not expired)
+    // Active consents (not revoked, not expired) - with timestamp parameter
     @Query("SELECT c FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.tenantId = :tenantId AND " +
            "c.status = 'GRANTED' AND (c.expiresAt IS NULL OR c.expiresAt > :now)")
-    List<ConsentRecord> findActiveConsentsForPatient(@Param("patientId") UUID patientId,
-                                                      @Param("tenantId") UUID tenantId,
-                                                      @Param("now") Instant now);
+    List<ConsentRecord> findActiveConsentsForPatientWithTime(@Param("patientId") UUID patientId,
+                                                              @Param("tenantId") UUID tenantId,
+                                                              @Param("now") Instant now);
 
     // Specific purpose consent
     @Query("SELECT c FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.tenantId = :tenantId AND " +
@@ -62,11 +62,6 @@ public interface ConsentRecordRepository extends JpaRepository<ConsentRecord, UU
                                                      @Param("tenantId") UUID tenantId,
                                                      @Param("type") ConsentType type,
                                                      @Param("now") Instant now);
-
-    // Expired consents
-    @Query("SELECT c FROM ConsentRecord c WHERE c.tenantId = :tenantId AND c.expiresAt IS NOT NULL AND " +
-           "c.expiresAt < :now AND c.status = 'GRANTED'")
-    List<ConsentRecord> findExpiredConsents(@Param("tenantId") UUID tenantId, @Param("now") Instant now);
 
     // Consents expiring soon
     @Query("SELECT c FROM ConsentRecord c WHERE c.tenantId = :tenantId AND c.status = 'GRANTED' AND " +
@@ -101,7 +96,34 @@ public interface ConsentRecordRepository extends JpaRepository<ConsentRecord, UU
 
     @Query("SELECT COUNT(c) FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.tenantId = :tenantId AND " +
            "c.status = 'GRANTED' AND (c.expiresAt IS NULL OR c.expiresAt > :now)")
-    long countActiveConsentsForPatient(@Param("patientId") UUID patientId,
-                                        @Param("tenantId") UUID tenantId,
-                                        @Param("now") Instant now);
+    long countActiveConsentsForPatientWithTime(@Param("patientId") UUID patientId,
+                                                @Param("tenantId") UUID tenantId,
+                                                @Param("now") Instant now);
+
+    // Additional methods for service
+    @Query("SELECT c FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.tenantId = :tenantId AND " +
+           "c.deletedAt IS NULL ORDER BY c.grantedAt DESC")
+    Page<ConsentRecord> findByPatientIdAndTenantIdAndDeletedAtIsNull(@Param("patientId") UUID patientId,
+                                                                      @Param("tenantId") UUID tenantId,
+                                                                      Pageable pageable);
+
+    @Query("SELECT c FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.consentType = :consentType AND c.tenantId = :tenantId AND c.deletedAt IS NULL")
+    List<ConsentRecord> findByPatientIdAndConsentTypeAndTenantId(@Param("patientId") UUID patientId,
+                                                                  @Param("consentType") ConsentType consentType,
+                                                                  @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT c FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.tenantId = :tenantId AND " +
+           "c.status = 'GRANTED' AND (c.expiresAt IS NULL OR c.expiresAt >= CURRENT_TIMESTAMP) AND c.deletedAt IS NULL")
+    List<ConsentRecord> findActiveConsentsForPatient(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT c FROM ConsentRecord c WHERE c.tenantId = :tenantId AND c.status = 'GRANTED' AND " +
+           "c.expiresAt < :now AND c.deletedAt IS NULL")
+    List<ConsentRecord> findExpiredConsents(@Param("tenantId") UUID tenantId, @Param("now") Instant now);
+
+    @Query("SELECT COUNT(c) FROM ConsentRecord c WHERE c.patient.id = :patientId AND c.tenantId = :tenantId AND c.deletedAt IS NULL")
+    long countByPatientIdAndTenantId(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
+
+    // Additional method for service
+    @Query("SELECT c FROM ConsentRecord c WHERE c.id = :id AND c.tenantId = :tenantId AND c.deletedAt IS NULL")
+    Optional<ConsentRecord> findByIdAndTenantIdAndDeletedAtIsNull(@Param("id") UUID id, @Param("tenantId") UUID tenantId);
 }

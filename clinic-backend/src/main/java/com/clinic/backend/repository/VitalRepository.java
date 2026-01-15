@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.Vital;
+import com.clinic.common.entity.patient.Vital;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,6 +25,12 @@ public interface VitalRepository extends JpaRepository<Vital, UUID> {
     Page<Vital> findPatientVitals(@Param("patientId") UUID patientId,
                                    @Param("tenantId") UUID tenantId,
                                    Pageable pageable);
+
+    @Query("SELECT v FROM Vital v WHERE v.patient.id = :patientId AND v.tenantId = :tenantId " +
+           "ORDER BY v.recordedAt DESC")
+    Page<Vital> findByPatientIdAndTenantId(@Param("patientId") UUID patientId,
+                                            @Param("tenantId") UUID tenantId,
+                                            Pageable pageable);
 
     @Query("SELECT v FROM Vital v WHERE v.patient.id = :patientId AND v.tenantId = :tenantId " +
            "ORDER BY v.recordedAt DESC")
@@ -56,6 +62,12 @@ public interface VitalRepository extends JpaRepository<Vital, UUID> {
                                               @Param("tenantId") UUID tenantId,
                                               @Param("startDate") Instant startDate,
                                               @Param("endDate") Instant endDate);
+
+    @Query("SELECT v FROM Vital v WHERE v.patient.id = :patientId AND v.tenantId = :tenantId AND " +
+           "v.recordedAt >= :since ORDER BY v.recordedAt DESC")
+    List<Vital> findRecentVitalsForPatient(@Param("patientId") UUID patientId,
+                                            @Param("tenantId") UUID tenantId,
+                                            @Param("since") Instant since);
 
     // Abnormal vitals (for alerts)
     @Query("SELECT v FROM Vital v WHERE v.tenantId = :tenantId AND v.recordedAt >= :since AND " +

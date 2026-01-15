@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.AuditLog;
+import com.clinic.common.entity.core.AuditLog;
 import com.clinic.common.enums.AuditAction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

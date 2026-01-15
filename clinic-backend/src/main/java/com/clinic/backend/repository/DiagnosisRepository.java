@@ -1,6 +1,6 @@
 package com.clinic.backend.repository;
 
-import com.clinic.backend.entity.Diagnosis;
+import com.clinic.common.entity.patient.Diagnosis;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,16 +20,24 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID> {
     Optional<Diagnosis> findByIdAndTenantId(UUID id, UUID tenantId);
 
     // Patient diagnoses
-    @Query("SELECT d FROM Diagnosis d WHERE d.patient.id = :patientId AND d.tenantId = :tenantId " +
+    @Query("SELECT d FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId " +
            "ORDER BY d.diagnosedAt DESC")
     Page<Diagnosis> findPatientDiagnoses(@Param("patientId") UUID patientId,
                                           @Param("tenantId") UUID tenantId,
                                           Pageable pageable);
 
-    List<Diagnosis> findByPatientIdAndTenantIdOrderByDiagnosedAtDesc(UUID patientId, UUID tenantId);
+    @Query("SELECT d FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId " +
+           "ORDER BY d.diagnosedAt DESC")
+    List<Diagnosis> findByPatientIdAndTenantIdOrderByDiagnosedAtDesc(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT d FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId " +
+           "ORDER BY d.diagnosedAt DESC")
+    List<Diagnosis> findByPatientId(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 
     // Medical record diagnoses
     List<Diagnosis> findByMedicalRecordIdAndTenantId(UUID medicalRecordId, UUID tenantId);
+
+    Page<Diagnosis> findByMedicalRecordIdAndTenantId(UUID medicalRecordId, UUID tenantId, Pageable pageable);
 
     // ICD-10 code queries
     Optional<Diagnosis> findByIcd10CodeAndPatientIdAndTenantId(String icd10Code, UUID patientId, UUID tenantId);
@@ -37,6 +45,10 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID> {
     @Query("SELECT d FROM Diagnosis d WHERE d.tenantId = :tenantId AND d.icd10Code = :icd10Code " +
            "ORDER BY d.diagnosedAt DESC")
     List<Diagnosis> findByIcd10Code(@Param("tenantId") UUID tenantId, @Param("icd10Code") String icd10Code);
+
+    @Query("SELECT d FROM Diagnosis d WHERE d.icd10Code = :icd10Code AND d.tenantId = :tenantId " +
+           "ORDER BY d.diagnosedAt DESC")
+    List<Diagnosis> findByIcd10CodeAndTenantId(@Param("icd10Code") String icd10Code, @Param("tenantId") UUID tenantId);
 
     // Diagnosis name search
     @Query("SELECT d FROM Diagnosis d WHERE d.tenantId = :tenantId AND " +
@@ -69,14 +81,22 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID> {
                                      @Param("startDate") LocalDate startDate,
                                      @Param("endDate") LocalDate endDate);
 
-    // Active diagnoses for patient (no resolved date)
-    @Query("SELECT d FROM Diagnosis d WHERE d.patient.id = :patientId AND d.tenantId = :tenantId AND " +
-           "d.resolvedAt IS NULL ORDER BY d.diagnosedAt DESC")
+    // Active diagnoses for patient
+    @Query("SELECT d FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId " +
+           "ORDER BY d.diagnosedAt DESC")
     List<Diagnosis> findActivePatientDiagnoses(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 
-    // Counting
-    long countByPatientIdAndTenantId(UUID patientId, UUID tenantId);
+    @Query("SELECT d FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId " +
+           "ORDER BY d.diagnosedAt DESC")
+    List<Diagnosis> findActiveDiagnosesForPatient(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 
-    @Query("SELECT COUNT(d) FROM Diagnosis d WHERE d.patient.id = :patientId AND d.tenantId = :tenantId AND d.resolvedAt IS NULL")
+    // Counting
+    @Query("SELECT COUNT(d) FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId")
+    long countByPatientIdAndTenantId(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT COUNT(d) FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId")
+    long countByPatientId(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
+
+    @Query("SELECT COUNT(d) FROM Diagnosis d JOIN d.medicalRecord m WHERE m.patient.id = :patientId AND d.tenantId = :tenantId")
     long countActivePatientDiagnoses(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 }
