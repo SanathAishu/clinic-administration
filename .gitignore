@@ -95,3 +95,9 @@ jacoco.exec
 *.jks
 secrets/
 credentials.json
+
+# ============================================================================
+# Personal/Local Files
+# ============================================================================
+# Claude Code instructions (personal use only)
+CLAUDE.md
