@@ -9,6 +9,8 @@ import com.clinic.common.entity.core.Role;
 import com.clinic.common.entity.core.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class RoleService {
      * Create new role (Injective function within tenant: (name, tenantId) → role)
      */
     @Transactional
+    @CacheEvict(value = "roles", allEntries = true)
     public Role createRole(Role role, UUID tenantId) {
         log.debug("Creating role: {} for tenant: {}", role.getName(), tenantId);
 
@@ -139,6 +142,7 @@ public class RoleService {
      * Update role
      */
     @Transactional
+    @CacheEvict(value = "roles", allEntries = true)
     public Role updateRole(UUID id, UUID tenantId, Role updates) {
         Role role = getRoleById(id, tenantId);
 
@@ -258,6 +262,7 @@ public class RoleService {
      * Soft delete role
      */
     @Transactional
+    @CacheEvict(value = "roles", allEntries = true)
     public void softDeleteRole(UUID roleId, UUID tenantId) {
         Role role = getRoleById(roleId, tenantId);
 
@@ -286,6 +291,7 @@ public class RoleService {
      * Get role list using v_role_permissions view (CQRS Read)
      * Returns roles with pre-aggregated permission information.
      */
+    @Cacheable(value = "roles", key = "#tenantId + ':list'")
     public List<RolePermissionsViewDTO> getRoleListView(UUID tenantId) {
         return roleViewRepository.findAllByTenantId(tenantId);
     }
@@ -294,6 +300,7 @@ public class RoleService {
      * Get role detail using v_role_permissions view (CQRS Read)
      * Returns complete role profile with permissions.
      */
+    @Cacheable(value = "roles", key = "#tenantId + ':detail:' + #id")
     public Optional<RolePermissionsViewDTO> getRoleDetailView(UUID id, UUID tenantId) {
         return roleViewRepository.findDetailById(id, tenantId);
     }
@@ -301,6 +308,7 @@ public class RoleService {
     /**
      * Get system roles using view (CQRS Read)
      */
+    @Cacheable(value = "roles", key = "'system:list'")
     public List<RolePermissionsViewDTO> getSystemRolesView() {
         return roleViewRepository.findSystemRoles();
     }
@@ -308,6 +316,7 @@ public class RoleService {
     /**
      * Get tenant-specific roles using view (CQRS Read)
      */
+    @Cacheable(value = "roles", key = "#tenantId + ':tenant:list'")
     public List<RolePermissionsViewDTO> getTenantRolesView(UUID tenantId) {
         return roleViewRepository.findTenantRoles(tenantId);
     }
@@ -315,6 +324,7 @@ public class RoleService {
     /**
      * Search roles using view (CQRS Read)
      */
+    @Cacheable(value = "roles", key = "#tenantId + ':search:' + #searchTerm")
     public List<RolePermissionsViewDTO> searchRolesView(UUID tenantId, String searchTerm) {
         return roleViewRepository.searchByTenantId(tenantId, searchTerm);
     }
@@ -327,6 +337,7 @@ public class RoleService {
      * Assign permissions to role by IDs (Set operation: union)
      */
     @Transactional
+    @CacheEvict(value = "roles", allEntries = true)
     public Role assignPermissionsToRole(UUID roleId, UUID tenantId, Set<UUID> permissionIds) {
         Role role = getRoleById(roleId, tenantId);
 
@@ -353,6 +364,7 @@ public class RoleService {
      * Remove permission from role by ID
      */
     @Transactional
+    @CacheEvict(value = "roles", allEntries = true)
     public Role removePermissionFromRoleById(UUID roleId, UUID tenantId, UUID permissionId) {
         Role role = getRoleById(roleId, tenantId);
 
@@ -379,6 +391,7 @@ public class RoleService {
      * Replace all role permissions by IDs (Set replacement)
      */
     @Transactional
+    @CacheEvict(value = "roles", allEntries = true)
     public Role setRolePermissionsByIds(UUID roleId, UUID tenantId, Set<UUID> permissionIds) {
         Role role = getRoleById(roleId, tenantId);
 

@@ -11,6 +11,9 @@ import com.clinic.common.entity.core.User;
 import com.clinic.common.enums.AppointmentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -83,7 +86,9 @@ public class AppointmentService {
 
     /**
      * Get detailed appointment information using v_appointment_detail view.
+     * Cached for 5 minutes with composite key: tenantId + appointmentId
      */
+    @Cacheable(value = "appointments:details", key = "#tenantId + ':' + #appointmentId")
     public AppointmentDetailViewDTO getAppointmentDetail(UUID tenantId, UUID appointmentId) {
         log.debug("Fetching appointment detail: {} for tenant: {}", appointmentId, tenantId);
         return appointmentViewRepository.findDetailById(tenantId, appointmentId)
@@ -92,7 +97,9 @@ public class AppointmentService {
 
     /**
      * Get today's appointments using v_today_appointments view.
+     * Cached for 1 minute (highly volatile) with key: tenantId
      */
+    @Cacheable(value = "appointments:today", key = "#tenantId")
     public List<TodayAppointmentViewDTO> getTodayAppointments(UUID tenantId) {
         log.debug("Fetching today's appointments for tenant: {}", tenantId);
         return appointmentViewRepository.findTodayAppointments(tenantId);
@@ -133,7 +140,9 @@ public class AppointmentService {
     /**
      * Calculate available time slots for a doctor on a specific date.
      * Uses Combinatorics - finding gaps in time intervals.
+     * Cached for 2 minutes (frequently changing) with composite key: tenantId + doctorId + date + duration
      */
+    @Cacheable(value = "appointments:slots", key = "#tenantId + ':' + #doctorId + ':' + #date + ':' + #slotDurationMinutes")
     public List<AvailableSlotDTO> getAvailableSlots(UUID tenantId, UUID doctorId, LocalDate date, int slotDurationMinutes) {
         log.debug("Calculating available slots for doctor: {} on date: {} in tenant: {}", doctorId, date, tenantId);
 
@@ -221,7 +230,15 @@ public class AppointmentService {
         return instant.atZone(zoneId).toLocalTime().toString().substring(0, 5);
     }
 
+    /**
+     * Create new appointment and evict all related caches.
+     * Evicts: today's appointments, available slots, and appointment details caches.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:slots", allEntries = true)
+    })
     public Appointment createAppointment(Appointment appointment, UUID tenantId) {
         log.debug("Creating appointment for patient: {} with doctor: {}",
                 appointment.getPatient().getId(), appointment.getDoctor().getId());
@@ -282,7 +299,15 @@ public class AppointmentService {
         return appointmentRepository.findUnconfirmedAppointments(tenantId, Instant.now());
     }
 
+    /**
+     * Confirm appointment and evict related caches.
+     * Status change affects today's appointments and details.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public Appointment confirmAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.CONFIRMED);
@@ -292,7 +317,15 @@ public class AppointmentService {
         return saved;
     }
 
+    /**
+     * Start appointment and evict related caches.
+     * Status change affects today's appointments and details.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public Appointment startAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.IN_PROGRESS);
@@ -302,7 +335,16 @@ public class AppointmentService {
         return saved;
     }
 
+    /**
+     * Complete appointment and evict related caches.
+     * Status change affects today's appointments, available slots, and details.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:slots", allEntries = true),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public Appointment completeAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.COMPLETED);
@@ -312,7 +354,16 @@ public class AppointmentService {
         return saved;
     }
 
+    /**
+     * Cancel appointment and evict related caches.
+     * Cancellation frees up slots and affects today's appointments.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:slots", allEntries = true),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public Appointment cancelAppointment(UUID id, UUID tenantId, User cancelledBy, String reason) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.CANCELLED);
@@ -322,7 +373,16 @@ public class AppointmentService {
         return saved;
     }
 
+    /**
+     * Mark appointment as no-show and evict related caches.
+     * No-show frees up slots and affects today's appointments.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:slots", allEntries = true),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public Appointment markNoShow(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.NO_SHOW);
@@ -347,7 +407,16 @@ public class AppointmentService {
         }
     }
 
+    /**
+     * Update appointment and evict all related caches.
+     * Evicts: today's appointments, available slots, and specific appointment details.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:slots", allEntries = true),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public Appointment updateAppointment(UUID id, UUID tenantId, Appointment updates) {
         Appointment appointment = getAppointmentById(id, tenantId);
 
@@ -392,7 +461,16 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
+    /**
+     * Soft delete appointment and evict all related caches.
+     * Evicts: today's appointments, available slots, and specific appointment details.
+     */
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "appointments:today", key = "#tenantId"),
+            @CacheEvict(value = "appointments:slots", allEntries = true),
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+    })
     public void softDeleteAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         appointment.softDelete();

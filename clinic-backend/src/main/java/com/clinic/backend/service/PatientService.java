@@ -6,6 +6,8 @@ import com.clinic.backend.repository.PatientRepository;
 import com.clinic.common.enums.Gender;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class PatientService {
     private final TenantService tenantService;
 
     @Transactional
+    @CacheEvict(value = "patients", allEntries = true, condition = "#tenantId != null")
     public Patient createPatient(Patient patient, UUID tenantId) {
         log.debug("Creating patient: {} for tenant: {}", patient.getEmail(), tenantId);
 
@@ -77,6 +80,12 @@ public class PatientService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "patients", key = "#id + '-' + #tenantId"),
+            @CacheEvict(value = "patientAppointments", allEntries = true),
+            @CacheEvict(value = "patientMedicalHistory", allEntries = true),
+            @CacheEvict(value = "patientBillingHistory", allEntries = true)
+    })
     public Patient updatePatient(UUID id, UUID tenantId, Patient updates) {
         Patient patient = getPatientById(id, tenantId);
 
@@ -99,6 +108,12 @@ public class PatientService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "patients", key = "#id + '-' + #tenantId"),
+            @CacheEvict(value = "patientAppointments", allEntries = true),
+            @CacheEvict(value = "patientMedicalHistory", allEntries = true),
+            @CacheEvict(value = "patientBillingHistory", allEntries = true)
+    })
     public void softDeletePatient(UUID id, UUID tenantId) {
         Patient patient = getPatientById(id, tenantId);
         patient.softDelete();

@@ -10,6 +10,9 @@ import com.clinic.common.enums.PaymentMethod;
 import com.clinic.common.enums.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,14 @@ public class BillingService {
     private final BillingViewRepository billingViewRepository;
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "billings:detail", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:currentMonth", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:monthlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:yearlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:totalOverdue", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:patientBalance", allEntries = true, condition = "#tenantId != null")
+    })
     public Billing createBilling(Billing billing, UUID tenantId) {
         log.debug("Creating billing for patient: {}", billing.getPatient().getId());
 
@@ -85,6 +96,14 @@ public class BillingService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "billings:detail", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:currentMonth", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:monthlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:yearlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:totalOverdue", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:patientBalance", allEntries = true, condition = "#tenantId != null")
+    })
     public Billing recordPayment(UUID id, UUID tenantId, BigDecimal paymentAmount, String paymentMethod) {
         Billing billing = getBillingById(id, tenantId);
 
@@ -113,6 +132,14 @@ public class BillingService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "billings:detail", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:currentMonth", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:monthlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:yearlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:totalOverdue", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:patientBalance", allEntries = true, condition = "#tenantId != null")
+    })
     public Billing markAsPaid(UUID id, UUID tenantId) {
         Billing billing = getBillingById(id, tenantId);
         billing.setPaidAmount(billing.getTotalAmount());
@@ -124,6 +151,14 @@ public class BillingService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "billings:detail", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:currentMonth", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:monthlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:yearlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:totalOverdue", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:patientBalance", allEntries = true, condition = "#tenantId != null")
+    })
     public Billing cancelBilling(UUID id, UUID tenantId) {
         Billing billing = getBillingById(id, tenantId);
         billing.setPaymentStatus(PaymentStatus.CANCELLED);
@@ -133,6 +168,14 @@ public class BillingService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "billings:detail", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:currentMonth", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:monthlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:yearlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:totalOverdue", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:patientBalance", allEntries = true, condition = "#tenantId != null")
+    })
     public Billing updateBilling(UUID id, UUID tenantId, Billing updates) {
         Billing billing = getBillingById(id, tenantId);
 
@@ -156,6 +199,14 @@ public class BillingService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "billings:detail", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:currentMonth", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:monthlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:yearlySummary", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:totalOverdue", allEntries = true, condition = "#tenantId != null"),
+            @CacheEvict(value = "billings:patientBalance", allEntries = true, condition = "#tenantId != null")
+    })
     public void softDeleteBilling(UUID id, UUID tenantId) {
         Billing billing = getBillingById(id, tenantId);
         billing.softDelete();
@@ -167,6 +218,12 @@ public class BillingService {
         return billingRepository.calculateOutstandingBalance(tenantId);
     }
 
+    /**
+     * Get patient's outstanding balance.
+     * Cached for 2 minutes - important to be relatively fresh for patient financial tracking.
+     */
+    @Cacheable(value = "billings:patientBalance", key = "#patientId + ':' + #tenantId",
+               unless = "#result == null")
     public BigDecimal getPatientOutstandingBalance(UUID patientId, UUID tenantId) {
         return billingRepository.calculatePatientOutstandingBalance(patientId, tenantId);
     }
@@ -184,7 +241,9 @@ public class BillingService {
 
     /**
      * Get billing by ID using v_billing_list view (CQRS Read).
+     * Cached individually for quick access to billing details (5 minutes).
      */
+    @Cacheable(value = "billings:detail", key = "#id + ':' + #tenantId")
     public Optional<BillingListViewDTO> getBillingDetailView(UUID id, UUID tenantId) {
         return billingViewRepository.findById(id, tenantId);
     }
@@ -244,7 +303,10 @@ public class BillingService {
 
     /**
      * Get total overdue amount for tenant.
+     * Cached for 2 minutes - important to be relatively fresh for financial tracking.
      */
+    @Cacheable(value = "billings:totalOverdue", key = "#tenantId",
+               unless = "#result == null")
     public BigDecimal getTotalOverdueAmountView(UUID tenantId) {
         return billingViewRepository.getTotalOverdueAmount(tenantId);
     }
@@ -262,7 +324,10 @@ public class BillingService {
 
     /**
      * Get monthly billing summary using materialized view (CQRS Read).
+     * Cached for 10 minutes - historical monthly data is stable.
      */
+    @Cacheable(value = "billings:monthlySummary", key = "#tenantId + ':' + #month",
+               unless = "#result == null || #result.isEmpty()")
     public List<BillingSummaryViewDTO> getMonthlySummaryView(UUID tenantId, LocalDate month) {
         return billingViewRepository.findMonthlySummary(tenantId, month);
     }
@@ -276,7 +341,10 @@ public class BillingService {
 
     /**
      * Get yearly billing summary using materialized view (CQRS Read).
+     * Cached for 15 minutes - historical yearly data is very stable.
      */
+    @Cacheable(value = "billings:yearlySummary", key = "#tenantId + ':' + #year",
+               unless = "#result == null || #result.isEmpty()")
     public List<BillingSummaryViewDTO> getYearlySummaryView(UUID tenantId, int year) {
         return billingViewRepository.findYearlySummary(tenantId, year);
     }
@@ -290,7 +358,10 @@ public class BillingService {
 
     /**
      * Get current month summary using materialized view (CQRS Read).
+     * Cached for 5 minutes - current month data changes frequently.
      */
+    @Cacheable(value = "billings:currentMonth", key = "#tenantId",
+               unless = "#result == null || !#result.isPresent()")
     public Optional<BillingSummaryViewDTO> getCurrentMonthSummaryView(UUID tenantId) {
         return billingViewRepository.findCurrentMonthSummary(tenantId);
     }

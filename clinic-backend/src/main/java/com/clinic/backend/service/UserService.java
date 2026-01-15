@@ -11,6 +11,8 @@ import com.clinic.common.entity.core.User;
 import com.clinic.common.enums.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ public class UserService {
      * Create new user (Injective function within tenant: (email, tenantId) → user)
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public User createUser(User user, UUID tenantId) {
         log.debug("Creating user: {} for tenant: {}", user.getEmail(), tenantId);
 
@@ -122,6 +125,7 @@ public class UserService {
      * Update user
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public User updateUser(UUID id, UUID tenantId, User updates) {
         User user = getUserById(id, tenantId);
 
@@ -177,6 +181,7 @@ public class UserService {
      * Reset password (admin operation)
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public void resetPassword(UUID userId, UUID tenantId, String newPassword) {
         User user = getUserById(userId, tenantId);
 
@@ -225,6 +230,7 @@ public class UserService {
      * Unlock user account (Idempotent operation)
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public void unlockAccount(UUID userId, UUID tenantId) {
         User user = getUserById(userId, tenantId);
 
@@ -239,6 +245,7 @@ public class UserService {
      * Update user status (State machine)
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public User updateUserStatus(UUID userId, UUID tenantId, UserStatus newStatus) {
         User user = getUserById(userId, tenantId);
 
@@ -282,6 +289,7 @@ public class UserService {
      * Soft delete user (Idempotent)
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public void softDeleteUser(UUID userId, UUID tenantId) {
         User user = getUserById(userId, tenantId);
         user.softDelete();
@@ -315,6 +323,7 @@ public class UserService {
      * Get user list using v_user_list view (CQRS Read)
      * Returns pre-joined data with aggregated role information.
      */
+    @Cacheable(value = "users", key = "#tenantId + ':list'")
     public List<UserListViewDTO> getUserListView(UUID tenantId) {
         return userViewRepository.findAllByTenantId(tenantId);
     }
@@ -323,6 +332,7 @@ public class UserService {
      * Get user detail using v_user_detail view (CQRS Read)
      * Returns complete user profile with roles and permissions hierarchy.
      */
+    @Cacheable(value = "users", key = "#tenantId + ':detail:' + #id")
     public Optional<UserDetailViewDTO> getUserDetailView(UUID id, UUID tenantId) {
         return userViewRepository.findDetailById(id, tenantId);
     }
@@ -331,6 +341,7 @@ public class UserService {
      * Get doctors list using v_user_list view (CQRS Read)
      * Filters users with DOCTOR role.
      */
+    @Cacheable(value = "users", key = "#tenantId + ':doctors'")
     public List<UserListViewDTO> getDoctorsListView(UUID tenantId) {
         return userViewRepository.findDoctorsByTenantId(tenantId);
     }
@@ -339,6 +350,7 @@ public class UserService {
      * Search users using v_user_list view (CQRS Read)
      * Searches by name or email.
      */
+    @Cacheable(value = "users", key = "#tenantId + ':search:' + #searchTerm")
     public List<UserListViewDTO> searchUsersView(UUID tenantId, String searchTerm) {
         return userViewRepository.searchByTenantId(tenantId, searchTerm);
     }
@@ -366,6 +378,7 @@ public class UserService {
      * Adds roles to user's existing role set.
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public User assignRolesToUser(UUID userId, UUID tenantId, Set<UUID> roleIds) {
         User user = getUserById(userId, tenantId);
 
@@ -390,6 +403,7 @@ public class UserService {
      * Remove role from user (Set operation: difference)
      */
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public User removeRoleFromUser(UUID userId, UUID tenantId, UUID roleId) {
         User user = getUserById(userId, tenantId);
 

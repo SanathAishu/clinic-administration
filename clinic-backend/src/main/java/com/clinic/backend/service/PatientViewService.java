@@ -6,6 +6,7 @@ import com.clinic.common.dto.view.*;
 import com.clinic.common.security.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -80,6 +81,7 @@ public class PatientViewService {
      * @param patientId the patient ID
      * @return Optional of PatientDetailViewDTO
      */
+    @Cacheable(value = "patients", key = "#patientId + '-' + T(com.clinic.common.security.TenantContext).getCurrentTenant()")
     public Optional<PatientDetailViewDTO> getPatientDetail(UUID patientId) {
         UUID tenantId = getCurrentTenantId();
         log.debug("Fetching patient detail for patient: {} in tenant: {}", patientId, tenantId);
@@ -100,6 +102,7 @@ public class PatientViewService {
      * @param pageable pagination parameters
      * @return page of PatientAppointmentViewDTO
      */
+    @Cacheable(value = "patientAppointments", key = "#patientId + ':' + T(com.clinic.common.security.TenantContext).getCurrentTenant() + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
     public Page<PatientAppointmentViewDTO> getPatientAppointments(UUID patientId, Pageable pageable) {
         UUID tenantId = getCurrentTenantId();
         log.debug("Fetching appointments for patient: {} in tenant: {}", patientId, tenantId);
@@ -120,6 +123,7 @@ public class PatientViewService {
      * @param pageable pagination parameters
      * @return page of PatientMedicalHistoryViewDTO
      */
+    @Cacheable(value = "patientMedicalHistory", key = "#patientId + ':' + T(com.clinic.common.security.TenantContext).getCurrentTenant() + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
     public Page<PatientMedicalHistoryViewDTO> getPatientMedicalHistory(UUID patientId, Pageable pageable) {
         UUID tenantId = getCurrentTenantId();
         log.debug("Fetching medical history for patient: {} in tenant: {}", patientId, tenantId);
@@ -140,6 +144,7 @@ public class PatientViewService {
      * @param pageable pagination parameters
      * @return page of PatientBillingHistoryViewDTO
      */
+    @Cacheable(value = "patientBillingHistory", key = "#patientId + ':' + T(com.clinic.common.security.TenantContext).getCurrentTenant() + ':page:' + #pageable.pageNumber + ':size:' + #pageable.pageSize")
     public Page<PatientBillingHistoryViewDTO> getPatientBillingHistory(UUID patientId, Pageable pageable) {
         UUID tenantId = getCurrentTenantId();
         log.debug("Fetching billing history for patient: {} in tenant: {}", patientId, tenantId);
