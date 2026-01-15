@@ -56,12 +56,27 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 
 ```
 clinic-administration/
-├── clinic-backend/          # Spring Boot application
-├── clinic-common/           # Shared entities and utilities
-├── clinic-migrations/       # Flyway database migrations
-├── docs/                    # Project documentation
-├── monitoring/              # Prometheus & Logstash configs
-└── docker-compose.yml       # Local development environment
+├── clinic-backend/              # Spring Boot application
+│   ├── controller/              # REST API endpoints (1 controller)
+│   ├── service/                 # Business logic (22 services)
+│   ├── repository/              # Data access layer (23 repositories)
+│   ├── mapper/                  # MapStruct DTO mappers (8 mappers)
+│   └── security/                # JWT authentication
+├── clinic-common/               # Shared library
+│   ├── entity/                  # JPA entities (25 entities)
+│   │   ├── core/                # Tenant, User, Role, Permission, Session, AuditLog
+│   │   ├── patient/             # Patient, Vital, Diagnosis, PatientDocument
+│   │   ├── clinical/            # Appointment, MedicalRecord, Prescription, LabTest, etc.
+│   │   └── operational/         # Billing, Inventory, Notification, StaffSchedule
+│   ├── dto/                     # Request/Response DTOs
+│   └── security/                # TenantContext
+├── clinic-migrations/           # Flyway database migrations (6 migrations)
+│   └── db/migration/
+│       ├── V1-V4                # Core schema (23 tables)
+│       ├── V5                   # Materialized views (3 views)
+│       └── V6                   # Read views - CQRS (26 views)
+├── docs/                        # Project documentation
+└── docker-compose.yml           # Local development environment
 ```
 
 ## Getting Started

@@ -12,12 +12,12 @@ The Clinic Management System uses [Flyway](https://flywaydb.org/) for database v
 
 ```
 clinic-migrations/src/main/resources/db/migration/
-├── V1__create_base_schema.sql
-├── V2__create_enums.sql
-├── V3__create_core_tables.sql
-├── V4__create_indexes_and_constraints.sql
-├── V5__create_materialized_views_phase1.sql
-└── ... (future migrations)
+├── V1__create_foundation_tables.sql      # Tenants, users, roles, permissions, audit_logs
+├── V2__create_identity_access_tables.sql # Sessions, user_roles, role_permissions
+├── V3__create_patient_care_tables.sql    # Patients, appointments, medical_records, etc.
+├── V4__create_operations_tables.sql      # Billing, inventory, notifications, etc.
+├── V5__create_materialized_views_phase1.sql # 3 materialized views
+└── V6__create_read_views.sql             # 26 CQRS read views
 ```
 
 ### Naming Convention
@@ -29,9 +29,9 @@ V{version}__{description}.sql
 ```
 
 **Examples:**
-- `V1__create_base_schema.sql` - Version 1, initial schema
-- `V2__create_enums.sql` - Version 2, enum types
-- `V5__create_materialized_views_phase1.sql` - Version 5, materialized views
+- `V1__create_foundation_tables.sql` - Version 1, foundation tables
+- `V3__create_patient_care_tables.sql` - Version 3, patient care tables
+- `V6__create_read_views.sql` - Version 6, CQRS read views
 
 **Rules:**
 - Prefix: `V` (uppercase)
@@ -66,11 +66,12 @@ ORDER BY installed_rank;"
 ```
  installed_rank | version | description                        | type | script                                        | installed_on        | success
 ----------------+---------+------------------------------------+------+-----------------------------------------------+---------------------+---------
-              1 | 1       | create base schema                 | SQL  | V1__create_base_schema.sql                    | 2026-01-15 10:00:00 | t
-              2 | 2       | create enums                       | SQL  | V2__create_enums.sql                          | 2026-01-15 10:00:01 | t
-              3 | 3       | create core tables                 | SQL  | V3__create_core_tables.sql                    | 2026-01-15 10:00:02 | t
-              4 | 4       | create indexes and constraints     | SQL  | V4__create_indexes_and_constraints.sql        | 2026-01-15 10:00:03 | t
+              1 | 1       | create foundation tables           | SQL  | V1__create_foundation_tables.sql              | 2026-01-15 10:00:00 | t
+              2 | 2       | create identity access tables      | SQL  | V2__create_identity_access_tables.sql         | 2026-01-15 10:00:01 | t
+              3 | 3       | create patient care tables         | SQL  | V3__create_patient_care_tables.sql            | 2026-01-15 10:00:02 | t
+              4 | 4       | create operations tables           | SQL  | V4__create_operations_tables.sql              | 2026-01-15 10:00:03 | t
               5 | 5       | create materialized views phase1   | SQL  | V5__create_materialized_views_phase1.sql      | 2026-01-15 15:49:24 | t
+              6 | 6       | create read views                  | SQL  | V6__create_read_views.sql                     | 2026-01-16 01:30:00 | t
 ```
 
 ---

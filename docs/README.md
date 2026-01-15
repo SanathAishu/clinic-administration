@@ -124,29 +124,36 @@ export SPRING_PROFILES_ACTIVE=dev
 
 ```
 clinic-administration/
-├── clinic-backend/          # Main application (Spring Boot)
-│   ├── controller/          # REST endpoints
-│   ├── service/             # Business logic
-│   ├── repository/          # Data access (JPA)
-│   ├── security/            # Authentication & authorization
-│   └── config/              # Spring configuration
+├── clinic-backend/              # Main application (Spring Boot)
+│   ├── controller/              # REST endpoints (1 controller)
+│   ├── service/                 # Business logic (22 services)
+│   ├── repository/              # Data access - JPA (23 repositories)
+│   ├── mapper/                  # MapStruct DTO mappers (8 mappers)
+│   ├── security/                # JWT authentication
+│   └── config/                  # Spring configuration
 │
-├── clinic-common/           # Shared library
-│   ├── entity/              # JPA entities (23 entities)
-│   ├── dto/                 # Data transfer objects
-│   ├── enums/               # Enumeration types
-│   └── mapper/              # MapStruct mappers
+├── clinic-common/               # Shared library
+│   ├── entity/                  # JPA entities (25 entities)
+│   │   ├── core/                # Tenant, User, Role, Permission, Session, AuditLog
+│   │   ├── patient/             # Patient, Vital, Diagnosis, PatientDocument
+│   │   ├── clinical/            # Appointment, MedicalRecord, Prescription, LabTest
+│   │   └── operational/         # Billing, Inventory, Notification, StaffSchedule
+│   ├── dto/                     # Request/Response DTOs
+│   │   ├── auth/                # Login/Refresh DTOs
+│   │   ├── request/             # Create/Update request DTOs
+│   │   └── response/            # Response DTOs
+│   └── security/                # TenantContext
 │
-├── clinic-migrations/       # Database migrations
-│   └── db/migration/        # Flyway SQL scripts
-│       ├── V1__create_base_schema.sql
-│       ├── V2__create_enums.sql
-│       ├── V3__create_core_tables.sql
-│       ├── V4__create_indexes_and_constraints.sql
+├── clinic-migrations/           # Database migrations (6 migrations)
+│   └── db/migration/
+│       ├── V1__create_foundation_tables.sql
+│       ├── V2__create_identity_access_tables.sql
+│       ├── V3__create_patient_care_tables.sql
+│       ├── V4__create_operations_tables.sql
 │       ├── V5__create_materialized_views_phase1.sql
 │       └── V6__create_read_views.sql
 │
-└── docs/                    # Documentation (this directory)
+└── docs/                        # Documentation (this directory)
 ```
 
 ### Technology Stack
@@ -351,22 +358,25 @@ docker run -d --name clinic-postgres -e POSTGRES_USER=clinic_user -e POSTGRES_DB
 ### Implemented
 
 ✅ **Database Schema** - 23 core tables with RLS
-✅ **Database Migrations** - Flyway version control (5 migrations)
+✅ **Database Migrations** - Flyway version control (6 migrations)
 ✅ **Materialized Views** - Phase 1 (3 high-impact views)
+✅ **CQRS Read Views** - 26 database views for optimized READ operations
+✅ **JPA Entities** - 25 entity classes organized by domain
+✅ **Service Layer** - 22 service classes
+✅ **MapStruct Mappers** - 8 DTO mappers
 ✅ **Multi-Tenancy** - Row-Level Security policies
 ✅ **Soft Delete** - Logical deletion support
 ✅ **Audit Trail** - Partitioned audit logs
 ✅ **Custom Enums** - Type-safe domain values (10+ enums)
 ✅ **JSONB Support** - Flexible metadata storage
-✅ **Scheduled Tasks** - Automated view refresh
-✅ **Admin APIs** - Materialized view management
+✅ **Scheduled Tasks** - Automated view refresh (Spring @Scheduled)
+✅ **Admin APIs** - Materialized view management endpoints
 
 ### In Progress
 
-🚧 **Service Layer** - 22 services created, implementation in progress
-🚧 **REST Controllers** - Basic endpoints, expanding coverage
+🚧 **REST Controllers** - Admin endpoint complete, domain endpoints pending
 🚧 **Authentication** - JWT-based auth (setup pending)
-🚧 **API Documentation** - Swagger/OpenAPI (partial)
+🚧 **API Documentation** - Swagger/OpenAPI configuration
 
 ### Planned
 
@@ -558,19 +568,22 @@ refactor(services): simplify patient service logic
 
 ## 📊 Current Status
 
-**Last Updated:** January 15, 2026
+**Last Updated:** January 16, 2026
 
 | Component | Status | Progress |
 |-----------|--------|----------|
 | Database Schema | ✅ Complete | 100% |
-| Database Migrations | ✅ Complete | 100% |
-| Materialized Views Phase 1 | ✅ Complete | 100% |
-| Entity Classes | ✅ Complete | 100% |
-| Service Layer | 🚧 In Progress | 60% |
-| REST Controllers | 🚧 In Progress | 20% |
-| Authentication | 📋 Planned | 0% |
-| Testing | 🚧 In Progress | 30% |
-| Documentation | 🚧 In Progress | 70% |
+| Database Migrations (6) | ✅ Complete | 100% |
+| Materialized Views (3) | ✅ Complete | 100% |
+| CQRS Read Views (26) | ✅ Complete | 100% |
+| Entity Classes (25) | ✅ Complete | 100% |
+| Service Layer (22) | ✅ Complete | 100% |
+| MapStruct Mappers (8) | ✅ Complete | 100% |
+| Repositories (23) | ✅ Complete | 100% |
+| REST Controllers | 🚧 In Progress | 10% |
+| Authentication (JWT) | 📋 Planned | 0% |
+| Testing | 📋 Planned | 0% |
+| Documentation | ✅ Complete | 90% |
 
 ---
 

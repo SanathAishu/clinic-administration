@@ -32,37 +32,22 @@ Or via Docker (if using containerized PostgreSQL):
 docker exec -i clinic-postgres psql -U clinic_user -d clinic < clinic-migrations/src/main/resources/db/migration/V5__create_materialized_views_phase1.sql
 ```
 
-### Step 2: Install pg_cron Extension (Optional but Recommended)
+### Step 2: Automated Refresh (Spring @Scheduled)
 
-For automated scheduled refreshes, install pg_cron:
+**Note:** pg_cron is not available in the standard PostgreSQL Docker container. Instead, we use Spring Boot's `@Scheduled` tasks for automated refresh.
 
-```sql
--- Connect as superuser (postgres)
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-```
+The refresh is handled by:
+- `MaterializedViewRefreshRepository` - Native query calls to refresh functions
+- `MaterializedViewRefreshService` - Scheduled tasks with configurable intervals
 
-Configure `postgresql.conf`:
+**Refresh Schedule:**
+| View | Interval | Cron Expression |
+|------|----------|-----------------|
+| Patient Clinical Summary | 15 min | `0 */15 * * * *` |
+| Billing Summary | 1 hour | `0 0 * * * *` |
+| Notification Summary | 5 min | `0 */5 * * * *` |
 
-```ini
-shared_preload_libraries = 'pg_cron'
-cron.database_name = 'clinic'
-```
-
-Restart PostgreSQL after configuration changes.
-
-### Step 3: Set Up Refresh Schedules
-
-After pg_cron is installed, run the setup script:
-
-```bash
-psql -U clinic_user -d clinic -f clinic-migrations/src/main/resources/db/setup_pg_cron_schedules.sql
-```
-
-Or via Docker:
-
-```bash
-docker exec -i clinic-postgres psql -U clinic_user -d clinic < clinic-migrations/src/main/resources/db/setup_pg_cron_schedules.sql
-```
+See [Refresh Strategies](refresh-strategies.md) for alternative options including pg_cron setup if available.
 
 ## Usage in Application
 

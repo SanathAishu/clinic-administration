@@ -141,10 +141,17 @@ spring:
 **Audit (1 table)**
 - `audit_logs` - Partitioned audit trail
 
-**Views (3 materialized views)**
-- `mv_patient_clinical_summary`
-- `mv_billing_summary_by_period`
-- `mv_user_notification_summary`
+**Materialized Views (3 views)** - Expensive Aggregations
+- `mv_patient_clinical_summary` - Patient dashboard (15min refresh)
+- `mv_billing_summary_by_period` - Financial reports (1hr refresh)
+- `mv_user_notification_summary` - Notification badges (5min refresh)
+
+**Read Views (26 views)** - CQRS Pattern
+- Patient Domain (5): v_patient_list, v_patient_detail, v_patient_appointments, etc.
+- Clinical Domain (7): v_appointment_list, v_prescription_list, v_lab_test_list, etc.
+- Operations Domain (7): v_billing_list, v_inventory_list, v_notification_list, etc.
+- Security Domain (4): v_user_list, v_user_detail, v_role_permissions, v_tenant_summary
+- Dashboard (3): v_today_appointments, v_pending_lab_tests, v_overdue_payments
 
 ---
 
