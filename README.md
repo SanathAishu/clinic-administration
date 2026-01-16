@@ -4,14 +4,20 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 
 ## 📚 Documentation
 
-**Complete documentation is available in the project root and [`docs/`](docs/) directory:**
+**Complete documentation is available in the [`docs/`](docs/) directory:**
 
 ### Core Documentation
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture, multi-tenancy, CQRS pattern
-- **[SECURITY.md](SECURITY.md)** - Authentication, authorization, compliance
-- **[CACHING.md](CACHING.md)** - Redis distributed caching strategy
-- **[API.md](API.md)** - REST API documentation and examples
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture, multi-tenancy, CQRS pattern
+- **[SECURITY.md](docs/SECURITY.md)** - Authentication, authorization, compliance
+- **[CACHING.md](docs/CACHING.md)** - Redis distributed caching strategy
+- **[API.md](docs/API.md)** - REST API documentation and examples
 - **[Getting Started Guide](docs/README.md)** - Comprehensive project documentation
+- **[CLAUDE.md](docs/CLAUDE.md)** - Claude Code instructions and development guidelines
+
+### Phase Documentation
+- **[Phase E: Quality Assurance & Compliance (ISO 27001)](docs/PHASE_E_IMPLEMENTATION.md)** - Compliance Dashboard, Data Retention, Audit Trails ✅
+- **Phase D: Operations Research & Optimization** - Queue Management, Inventory Optimization, Prescription Enhancement ✅
+- **Phase A-C: Foundation** - Core infrastructure, security, caching ✅
 
 ### Database Documentation
 - **[Database Setup](docs/database/setup.md)** - PostgreSQL configuration and access
@@ -27,6 +33,14 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 
 ## Features
 
+### Phase E: Quality Assurance & Compliance ✅
+- **Compliance Dashboard** - Statistical Process Control (SPC) with 3-Sigma Rule for anomaly detection
+- **SLA Monitoring** - 7 metric types with automatic out-of-control detection
+- **Automated Data Retention** - Configurable archival policies with 4 actions (soft delete, export, anonymize, hard delete)
+- **Sensitive Data Audit Trail** - Append-only immutable logs for all sensitive operations with AOP-based automatic logging
+- **ISO 27001 Alignment** - Controls A.12.4 (logging & monitoring), A.18 (compliance)
+- **Data Lifecycle Management** - Pareto Principle optimization (80% queries on 20% of data)
+
 ### Core Features ✅
 - **Multi-tenant SaaS** architecture with PostgreSQL Row Level Security (RLS)
 - **JWT Authentication** - Stateless authentication with 15-minute access tokens, 7-day refresh tokens
@@ -38,6 +52,11 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 - **Soft Delete Only** - Regulatory compliance with data retention requirements
 - **Input Validation** - Bean Validation with custom validators
 - **Security** - Multi-layer security with encryption, XSS/CSRF protection, SQL injection prevention
+
+### Phase D: Operations Research ✅
+- **Queue Management** - M/M/1 Queuing Theory with ρ utilization tracking and Little's Law validation
+- **Inventory Optimization** - Economic Order Quantity (EOQ = √(2DS/H)) and Reorder Point calculation with safety stock
+- **Prescription Enhancement** - Drug interaction checking with inventory integration and ACID transactions
 
 ### Compliance ✅
 - **DPDP Act 2023** - Consent management, data breach notification, right to erasure
@@ -91,25 +110,40 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 ```
 clinic-administration/
 ├── clinic-backend/              # Spring Boot application
-│   ├── controller/              # REST API endpoints (1 controller)
-│   ├── service/                 # Business logic (22 services)
-│   ├── repository/              # Data access layer (23 repositories)
+│   ├── annotation/              # Custom annotations (@LogSensitiveAccess)
+│   ├── aspect/                  # AOP aspects (SensitiveDataAccessAspect)
+│   ├── controller/              # REST API endpoints (12 controllers)
+│   ├── service/                 # Business logic (25+ services)
+│   ├── repository/              # Data access layer (30+ repositories)
 │   ├── mapper/                  # MapStruct DTO mappers (8 mappers)
+│   ├── dto/                     # DTOs organized by feature
 │   └── security/                # JWT authentication
 ├── clinic-common/               # Shared library
-│   ├── entity/                  # JPA entities (25 entities)
+│   ├── entity/                  # JPA entities (29 entities)
 │   │   ├── core/                # Tenant, User, Role, Permission, Session, AuditLog
 │   │   ├── patient/             # Patient, Vital, Diagnosis, PatientDocument
 │   │   ├── clinical/            # Appointment, MedicalRecord, Prescription, LabTest, etc.
-│   │   └── operational/         # Billing, Inventory, Notification, StaffSchedule
+│   │   ├── operational/         # Billing, Inventory, Notification, StaffSchedule, QueueMetrics
+│   │   └── compliance/          # ComplianceMetrics, DataRetentionPolicy, SensitiveDataAccessLog (Phase E)
+│   ├── enums/                   # Enumerations (ComplianceMetricType, AccessType, etc.)
 │   ├── dto/                     # Request/Response DTOs
-│   └── security/                # TenantContext
-├── clinic-migrations/           # Flyway database migrations (6 migrations)
+│   └── security/                # TenantContext, security utilities
+├── clinic-migrations/           # Flyway database migrations (19 migrations)
 │   └── db/migration/
-│       ├── V1-V4                # Core schema (23 tables)
-│       ├── V5                   # Materialized views (3 views)
-│       └── V6                   # Read views - CQRS (26 views)
+│       ├── V1-V4                # Core schema (23 tables, Phase A)
+│       ├── V5                   # Materialized views (3 views, Phase A)
+│       ├── V6                   # Read views - CQRS (26 views, Phase A)
+│       ├── V7-V16               # Enhanced features (Phases B-D)
+│       ├── V17-V19              # Compliance & QA (Phase E)
 ├── docs/                        # Project documentation
+│   ├── PHASE_E_IMPLEMENTATION.md    # Phase E: Quality Assurance & ISO 27001
+│   ├── ARCHITECTURE.md          # System architecture
+│   ├── SECURITY.md              # Security & compliance
+│   ├── CACHING.md               # Redis caching strategy
+│   ├── API.md                   # REST API documentation
+│   ├── CLAUDE.md                # Development guidelines
+│   ├── PROJECT_SPECIFICATION.md # Technical specification
+│   └── [other documentation]
 └── docker-compose.yml           # Local development environment
 ```
 
@@ -152,13 +186,20 @@ cd clinic-migrations
 ../gradlew flywayMigrate
 ```
 
-This will apply 6 migrations:
-- V1: Foundation tables (tenants, users, roles)
-- V2: Identity & access tables (sessions, permissions)
-- V3: Patient care tables (patients, appointments, medical records)
-- V4: Operations tables (billing, inventory, notifications)
-- V5: Materialized views (3 views for expensive aggregations)
-- V6: CQRS read views (26 views for optimized queries)
+This will apply 19 migrations across 5 implementation phases:
+- **Phase A (V1-V6):** Foundation infrastructure
+  - V1: Foundation tables (tenants, users, roles)
+  - V2: Identity & access tables (sessions, permissions)
+  - V3: Patient care tables (patients, appointments, medical records)
+  - V4: Operations tables (billing, inventory, notifications)
+  - V5: Materialized views (3 views for expensive aggregations)
+  - V6: CQRS read views (26 views for optimized queries)
+- **Phase B-C (V7-V14):** Security, caching, performance
+- **Phase D (V15-V16):** Operations Research - Queue Management, Inventory Optimization
+- **Phase E (V17-V19):** Quality Assurance & ISO 27001 Compliance
+  - V17: Compliance metrics (SPC-based monitoring)
+  - V18: Data retention policies and archival tracking
+  - V19: Sensitive data access audit trail
 
 4. **Build and run the application:**
 ```bash
@@ -178,7 +219,7 @@ Once the application is running, access the interactive API documentation:
 - **OpenAPI JSON**: http://localhost:8080/v3/api-docs
 - **OpenAPI YAML**: http://localhost:8080/v3/api-docs.yaml
 
-See [API.md](API.md) for comprehensive API documentation.
+See [API.md](docs/API.md) for comprehensive API documentation.
 
 ### Monitoring & Observability
 
@@ -277,7 +318,7 @@ GET "550e8400-e29b-41d4-a716-446655440000:users:list"
 FLUSHALL
 ```
 
-See [CACHING.md](CACHING.md) for comprehensive caching documentation.
+See [CACHING.md](docs/CACHING.md) for comprehensive caching documentation.
 
 ## Compliance
 
