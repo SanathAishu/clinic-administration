@@ -164,12 +164,12 @@ spring:
 ```
 
 ### Advantages:
-- ✅ No PostgreSQL extension required
-- ✅ Centralized application logging
-- ✅ Easy to monitor and debug
-- ✅ Works with any PostgreSQL version
-- ✅ Can be controlled via application properties
-- ✅ Integrated with Spring Boot health checks
+-  No PostgreSQL extension required
+-  Centralized application logging
+-  Easy to monitor and debug
+-  Works with any PostgreSQL version
+-  Can be controlled via application properties
+-  Integrated with Spring Boot health checks
 
 ### Disadvantages:
 - ❌ Application must be running for refreshes
@@ -206,9 +206,9 @@ SELECT refresh_notification_summary();"
 ```
 
 ### Advantages:
-- ✅ Full control over refresh timing
-- ✅ No additional setup required
-- ✅ Good for development/testing
+-  Full control over refresh timing
+-  No additional setup required
+-  Good for development/testing
 
 ### Disadvantages:
 - ❌ Requires manual intervention
@@ -269,9 +269,9 @@ crontab -e
 ```
 
 ### Advantages:
-- ✅ Independent of application
-- ✅ Runs even when application is down
-- ✅ Leverages standard system tools
+-  Independent of application
+-  Runs even when application is down
+-  Leverages standard system tools
 
 ### Disadvantages:
 - ❌ Requires host system access
@@ -342,10 +342,10 @@ docker exec -i clinic-postgres psql -U clinic_user -d clinic < clinic-migrations
 ```
 
 ### Advantages:
-- ✅ Native database-level scheduling
-- ✅ Independent of application
-- ✅ Minimal overhead
-- ✅ Survives application restarts
+-  Native database-level scheduling
+-  Independent of application
+-  Minimal overhead
+-  Survives application restarts
 
 ### Disadvantages:
 - ❌ Requires container modification

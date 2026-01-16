@@ -1012,18 +1012,18 @@ public class DataBreachService {
 
 | Control | Type | Status |
 |---------|------|--------|
-| JWT Authentication | Preventive | ✅ Implemented |
-| RBAC Authorization | Preventive | ✅ Implemented |
-| Row Level Security | Preventive | ✅ Implemented |
-| Input Validation | Preventive | ✅ Implemented |
+| JWT Authentication | Preventive |  Implemented |
+| RBAC Authorization | Preventive |  Implemented |
+| Row Level Security | Preventive |  Implemented |
+| Input Validation | Preventive |  Implemented |
 | Output Encoding | Preventive | ⚠️ Partial (Frontend) |
-| Audit Logging | Detective | ✅ Implemented |
-| Encryption (TLS) | Preventive | ✅ Implemented |
+| Audit Logging | Detective |  Implemented |
+| Encryption (TLS) | Preventive |  Implemented |
 | Encryption (TDE) | Preventive | ⚠️ Production only |
-| Rate Limiting | Preventive | 📋 Planned |
-| CAPTCHA | Preventive | 📋 Planned |
-| WAF | Preventive | 📋 Planned |
-| SIEM Integration | Detective | 📋 Planned |
+| Rate Limiting | Preventive |  Planned |
+| CAPTCHA | Preventive |  Planned |
+| WAF | Preventive |  Planned |
+| SIEM Integration | Detective |  Planned |
 
 ## Security Testing
 

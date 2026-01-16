@@ -2137,8 +2137,8 @@ docker-compose restart nginx
 ## Development Roadmap
 
 ### Phase 1: Foundation & Setup
-1. ✅ Database schema design
-2. ✅ Project specification documentation
+1.  Database schema design
+2.  Project specification documentation
 3. 🔲 Initialize Gradle project with Spring Boot
 4. 🔲 Create Flyway migration scripts
 5. 🔲 Set up local development environment (Docker Compose)
