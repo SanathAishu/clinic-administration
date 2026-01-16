@@ -53,15 +53,22 @@ public class AccessAuditController {
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<Page<AccessAuditDTO>> getPatientAccessLogs(
             @PathVariable UUID patientId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         UUID tenantId = securityUtils.getCurrentTenantId();
-        log.info("Fetching access logs for patient {} in tenant {}", patientId, tenantId);
+        LocalDate actualStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
+        LocalDate actualEnd = endDate != null ? endDate : LocalDate.now();
+
+        log.info("Fetching access logs for patient {} in tenant {} from {} to {}",
+            patientId, tenantId, actualStart, actualEnd);
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<SensitiveDataAccessLog> logs = auditService.getPatientAccessLogs(patientId, tenantId, pageable);
+            Page<SensitiveDataAccessLog> logs = auditService.getPatientAccessLogs(patientId, tenantId,
+                actualStart, actualEnd, pageable);
 
             Page<AccessAuditDTO> dtos = logs.map(this::toDTO);
             return ResponseEntity.ok(dtos);
@@ -84,15 +91,22 @@ public class AccessAuditController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<AccessAuditDTO>> getUserAccessLogs(
             @PathVariable UUID userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         UUID tenantId = securityUtils.getCurrentTenantId();
-        log.info("Fetching access logs for user {} in tenant {}", userId, tenantId);
+        LocalDate actualStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
+        LocalDate actualEnd = endDate != null ? endDate : LocalDate.now();
+
+        log.info("Fetching access logs for user {} in tenant {} from {} to {}",
+            userId, tenantId, actualStart, actualEnd);
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<SensitiveDataAccessLog> logs = auditService.getUserAccessLogs(userId, tenantId, pageable);
+            Page<SensitiveDataAccessLog> logs = auditService.getUserAccessLogs(userId, tenantId,
+                actualStart, actualEnd, pageable);
 
             Page<AccessAuditDTO> dtos = logs.map(this::toDTO);
             return ResponseEntity.ok(dtos);
@@ -144,15 +158,21 @@ public class AccessAuditController {
      */
     @GetMapping("/exports")
     public ResponseEntity<Page<AccessAuditDTO>> getExportOperations(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         UUID tenantId = securityUtils.getCurrentTenantId();
-        log.info("Fetching data export operations for tenant {}", tenantId);
+        LocalDate actualStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
+        LocalDate actualEnd = endDate != null ? endDate : LocalDate.now();
+
+        log.info("Fetching data export operations for tenant {} from {} to {}", tenantId, actualStart, actualEnd);
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<SensitiveDataAccessLog> logs = auditService.getDataExportOperations(tenantId, pageable);
+            Page<SensitiveDataAccessLog> logs = auditService.getDataExportOperations(tenantId,
+                actualStart, actualEnd, pageable);
 
             Page<AccessAuditDTO> dtos = logs.map(this::toDTO);
             return ResponseEntity.ok(dtos);
@@ -208,16 +228,23 @@ public class AccessAuditController {
     @GetMapping("/by-type/{accessType}")
     public ResponseEntity<Page<AccessAuditDTO>> getAccessLogsByType(
             @PathVariable String accessType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         UUID tenantId = securityUtils.getCurrentTenantId();
-        log.info("Fetching access logs for type {} in tenant {}", accessType, tenantId);
+        LocalDate actualStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
+        LocalDate actualEnd = endDate != null ? endDate : LocalDate.now();
+
+        log.info("Fetching access logs for type {} in tenant {} from {} to {}",
+            accessType, tenantId, actualStart, actualEnd);
 
         try {
             AccessType type = AccessType.valueOf(accessType);
             Pageable pageable = PageRequest.of(page, size);
-            Page<SensitiveDataAccessLog> logs = auditService.getAccessLogsByType(type, tenantId, pageable);
+            Page<SensitiveDataAccessLog> logs = auditService.getAccessLogsByType(type, tenantId,
+                actualStart, actualEnd, pageable);
 
             Page<AccessAuditDTO> dtos = logs.map(this::toDTO);
             return ResponseEntity.ok(dtos);

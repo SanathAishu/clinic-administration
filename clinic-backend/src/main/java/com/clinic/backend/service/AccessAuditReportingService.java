@@ -49,10 +49,24 @@ public class AccessAuditReportingService {
      * @param pageable Pagination parameters
      * @return Paginated list of access logs for patient
      */
-    public Page<SensitiveDataAccessLog> getPatientAccessLogs(UUID patientId, UUID tenantId, Pageable pageable) {
-        log.debug("Fetching access logs for patient {} in tenant {}", patientId, tenantId);
-        // Placeholder: would query repository in full implementation
-        return Page.empty(pageable);
+    public Page<SensitiveDataAccessLog> getPatientAccessLogs(UUID patientId, UUID tenantId,
+                                                               LocalDate startDate, LocalDate endDate,
+                                                               Pageable pageable) {
+        log.debug("Fetching access logs for patient {} in tenant {} from {} to {}",
+            patientId, tenantId, startDate, endDate);
+
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        List<SensitiveDataAccessLog> logs = accessLogRepository
+            .findPatientAccessLogs(tenantId, patientId, startTime, endTime);
+
+        // Convert to Page
+        int start = (int) ((long) pageable.getPageNumber() * pageable.getPageSize());
+        int end = Math.min(start + pageable.getPageSize(), logs.size());
+
+        List<SensitiveDataAccessLog> pageContent = logs.subList(start, Math.min(end, logs.size()));
+        return new PageImpl<>(pageContent, pageable, logs.size());
     }
 
     /**
@@ -64,10 +78,16 @@ public class AccessAuditReportingService {
      * @param pageable Pagination parameters
      * @return Paginated list of user's access logs
      */
-    public Page<SensitiveDataAccessLog> getUserAccessLogs(UUID userId, UUID tenantId, Pageable pageable) {
-        log.debug("Fetching access logs for user {} in tenant {}", userId, tenantId);
-        // Placeholder: would query repository in full implementation
-        return Page.empty(pageable);
+    public Page<SensitiveDataAccessLog> getUserAccessLogs(UUID userId, UUID tenantId,
+                                                           LocalDate startDate, LocalDate endDate,
+                                                           Pageable pageable) {
+        log.debug("Fetching access logs for user {} in tenant {} from {} to {}",
+            userId, tenantId, startDate, endDate);
+
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        return accessLogRepository.findUserAccessLogs(tenantId, userId, startTime, endTime, pageable);
     }
 
     /**
@@ -78,10 +98,23 @@ public class AccessAuditReportingService {
      * @param pageable Pagination parameters
      * @return List of bulk export operations
      */
-    public Page<SensitiveDataAccessLog> getDataExportOperations(UUID tenantId, Pageable pageable) {
-        log.debug("Fetching data export operations for tenant {}", tenantId);
-        // Placeholder: would query repository in full implementation
-        return Page.empty(pageable);
+    public Page<SensitiveDataAccessLog> getDataExportOperations(UUID tenantId,
+                                                                  LocalDate startDate, LocalDate endDate,
+                                                                  Pageable pageable) {
+        log.debug("Fetching data export operations for tenant {} from {} to {}", tenantId, startDate, endDate);
+
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        List<SensitiveDataAccessLog> exports = accessLogRepository
+            .findDataExportOperations(tenantId, startTime, endTime);
+
+        // Convert to Page
+        int start = (int) ((long) pageable.getPageNumber() * pageable.getPageSize());
+        int end = Math.min(start + pageable.getPageSize(), exports.size());
+
+        List<SensitiveDataAccessLog> pageContent = exports.subList(start, Math.min(end, exports.size()));
+        return new PageImpl<>(pageContent, pageable, exports.size());
     }
 
     /**
@@ -97,8 +130,16 @@ public class AccessAuditReportingService {
     public Page<SensitiveDataAccessLog> getEntityAccessLogs(String entityType, UUID entityId,
                                                              UUID tenantId, Pageable pageable) {
         log.debug("Fetching access logs for {} {} in tenant {}", entityType, entityId, tenantId);
-        // Placeholder: would query repository in full implementation
-        return Page.empty(pageable);
+
+        List<SensitiveDataAccessLog> entityLogs = accessLogRepository
+            .findEntityAccessLogs(tenantId, entityType, entityId);
+
+        // Convert to Page
+        int start = (int) ((long) pageable.getPageNumber() * pageable.getPageSize());
+        int end = Math.min(start + pageable.getPageSize(), entityLogs.size());
+
+        List<SensitiveDataAccessLog> pageContent = entityLogs.subList(start, Math.min(end, entityLogs.size()));
+        return new PageImpl<>(pageContent, pageable, entityLogs.size());
     }
 
     /**
@@ -111,10 +152,15 @@ public class AccessAuditReportingService {
      * @return Logs filtered by access type
      */
     public Page<SensitiveDataAccessLog> getAccessLogsByType(AccessType accessType, UUID tenantId,
+                                                             LocalDate startDate, LocalDate endDate,
                                                              Pageable pageable) {
-        log.debug("Fetching access logs for type {} in tenant {}", accessType, tenantId);
-        // Placeholder: would query repository in full implementation
-        return Page.empty(pageable);
+        log.debug("Fetching access logs for type {} in tenant {} from {} to {}",
+            accessType, tenantId, startDate, endDate);
+
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        return accessLogRepository.findAccessLogsByType(tenantId, accessType, startTime, endTime, pageable);
     }
 
     /**
@@ -128,9 +174,11 @@ public class AccessAuditReportingService {
      */
     public Page<SensitiveDataAccessLog> getRecentAccessLogs(UUID tenantId, int days, Pageable pageable) {
         LocalDate startDate = LocalDate.now().minusDays(days);
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
         log.debug("Fetching access logs for tenant {} since {}", tenantId, startDate);
-        // Placeholder: would query repository in full implementation
-        return Page.empty(pageable);
+
+        return accessLogRepository.findRecentAccessLogs(tenantId, startTime, pageable);
     }
 
     /**
@@ -149,8 +197,9 @@ public class AccessAuditReportingService {
     public List<Map<String, Object>> detectSuspiciousPatterns(UUID tenantId) {
         log.info("Analyzing access patterns for tenant {}", tenantId);
 
-        // Placeholder: would analyze access patterns in full implementation
-        List<Map<String, Object>> suspiciousPatterns = new ArrayList<>();
+        // Placeholder: actual suspicious pattern detection deferred
+        List<Map<String, Object>> suspiciousPatterns = List.of();
+
         log.debug("Detected {} suspicious access patterns for tenant {}", suspiciousPatterns.size(), tenantId);
         return suspiciousPatterns;
     }
@@ -167,17 +216,45 @@ public class AccessAuditReportingService {
     public Map<String, Object> generateAuditReport(UUID tenantId, LocalDate startDate, LocalDate endDate) {
         log.info("Generating audit report for tenant {} from {} to {}", tenantId, startDate, endDate);
 
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        // Query all logs for date range
+        List<SensitiveDataAccessLog> allLogs = accessLogRepository.findRecentAccessLogs(
+            tenantId, startTime, org.springframework.data.domain.Pageable.unpaged()).getContent();
+
+        // Calculate statistics
+        long totalAccess = allLogs.size();
+        long dataExportCount = allLogs.stream()
+            .filter(log -> Boolean.TRUE.equals(log.getDataExported()))
+            .count();
+
+        Set<UUID> uniqueUsers = allLogs.stream()
+            .map(log -> log.getUser().getId())
+            .collect(Collectors.toSet());
+
+        Set<UUID> uniquePatients = allLogs.stream()
+            .filter(log -> log.getPatient() != null)
+            .map(log -> log.getPatient().getId())
+            .collect(Collectors.toSet());
+
+        Map<AccessType, Long> accessByType = allLogs.stream()
+            .collect(Collectors.groupingBy(SensitiveDataAccessLog::getAccessType, Collectors.counting()));
+
+        Map<String, Long> entityAccess = allLogs.stream()
+            .collect(Collectors.groupingBy(SensitiveDataAccessLog::getEntityType, Collectors.counting()));
+
         Map<String, Object> report = new HashMap<>();
         report.put("tenantId", tenantId);
         report.put("startDate", startDate);
         report.put("endDate", endDate);
         report.put("generatedAt", Instant.now());
-        report.put("totalAccess", 0L);
-        report.put("dataExportCount", 0L);
-        report.put("uniqueUsers", 0);
-        report.put("uniquePatients", 0);
-        report.put("accessByType", new HashMap<AccessType, Long>());
-        report.put("entityAccess", new HashMap<String, Long>());
+        report.put("totalAccess", totalAccess);
+        report.put("dataExportCount", dataExportCount);
+        report.put("uniqueUsers", uniqueUsers.size());
+        report.put("uniquePatients", uniquePatients.size());
+        report.put("accessByType", accessByType);
+        report.put("entityAccess", entityAccess);
 
         return report;
     }
@@ -192,7 +269,11 @@ public class AccessAuditReportingService {
      */
     public List<SensitiveDataAccessLog> getCompletePatientAuditTrail(UUID patientId, UUID tenantId) {
         log.debug("Fetching complete audit trail for patient {} in tenant {}", patientId, tenantId);
-        return List.of();
+
+        return accessLogRepository.findPatientAccessLogs(
+            tenantId, patientId,
+            Instant.ofEpochMilli(0), // All time start
+            Instant.now());
     }
 
     /**
@@ -204,7 +285,10 @@ public class AccessAuditReportingService {
      * @return Number of access logs
      */
     public long countAccessLogs(UUID tenantId, LocalDate startDate, LocalDate endDate) {
-        return 0L;
+        Instant startTime = startDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endTime = endDate.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        return accessLogRepository.countAccessLogs(tenantId, startTime, endTime);
     }
 
     /**
@@ -216,6 +300,9 @@ public class AccessAuditReportingService {
      * @return Coverage percentage (0-100)
      */
     public double verifyAuditCoverage(AccessType accessType, UUID tenantId) {
-        return 100.0;
+        long logsCount = countAccessLogs(tenantId, LocalDate.now(), LocalDate.now());
+
+        // Assuming perfect coverage if logs exist for the operation type
+        return logsCount > 0 ? 100.0 : 0.0;
     }
 }

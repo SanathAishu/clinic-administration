@@ -68,13 +68,15 @@ public class DataRetentionService {
         log.info("Starting data retention policy execution");
 
         try {
-            // Placeholder: would query enabled policies in full implementation
+            // Query all enabled retention policies (placeholder - actual tenant context needed)
             List<DataRetentionPolicy> policies = List.of();
 
             if (policies.isEmpty()) {
                 log.info("No active retention policies found");
                 return;
             }
+
+            log.info("Found {} active retention policies to execute", policies.size());
 
             for (DataRetentionPolicy policy : policies) {
                 try {
@@ -170,41 +172,83 @@ public class DataRetentionService {
      * Routes to specific archival methods by entity type.
      */
     private long archiveRecords(DataRetentionPolicy policy, Instant cutoffDate, Instant deleteDate) {
-        // Placeholder archival implementation
-        // In production, this would route to specific archival methods
-        log.debug("Archiving records for {} (not yet fully implemented)", policy.getEntityType());
+        log.debug("Archiving {} records created before {} (action: {})",
+            policy.getEntityType(), cutoffDate, policy.getArchivalAction());
+
+        return switch (policy.getEntityType()) {
+            case AUDIT_LOG -> archiveAuditLogs(policy, cutoffDate, deleteDate);
+            case SESSION -> archiveSessions(policy, cutoffDate, deleteDate);
+            case NOTIFICATION -> archiveNotifications(policy, cutoffDate, deleteDate);
+            default -> {
+                log.warn("No archival implementation for entity type: {}", policy.getEntityType());
+                yield 0L;
+            }
+        };
+    }
+
+    /**
+     * Archive audit logs based on archival action (placeholder implementation).
+     */
+    private long archiveAuditLogs(DataRetentionPolicy policy, Instant cutoffDate, Instant deleteDate) {
+        log.debug("Archiving audit logs (placeholder implementation)");
+        // Placeholder: actual implementation deferred
         return 0L;
     }
 
     /**
-     * Get retention policy for entity type (placeholder).
+     * Archive sessions based on archival action (placeholder implementation).
+     */
+    private long archiveSessions(DataRetentionPolicy policy, Instant cutoffDate, Instant deleteDate) {
+        log.debug("Archiving sessions (placeholder implementation)");
+        // Placeholder: actual implementation deferred
+        return 0L;
+    }
+
+    /**
+     * Archive notifications based on archival action (placeholder implementation).
+     */
+    private long archiveNotifications(DataRetentionPolicy policy, Instant cutoffDate, Instant deleteDate) {
+        log.debug("Archiving notifications (placeholder implementation)");
+        // Placeholder: actual implementation deferred
+        return 0L;
+    }
+
+    /**
+     * Get retention policy for entity type.
      */
     @Transactional(readOnly = true)
-    public DataRetentionPolicy getPolicyForEntityType(EntityType entityType) {
-        return null; // Placeholder - would query repository in full implementation
+    public DataRetentionPolicy getPolicyForEntityType(EntityType entityType, UUID tenantId) {
+        return policyRepository.findByEntityType(tenantId, entityType)
+            .orElse(null);
     }
 
     /**
      * Get archival execution logs for date range (placeholder).
      */
     @Transactional(readOnly = true)
-    public List<DataArchivalLog> getArchivalLogs(LocalDate startDate, LocalDate endDate) {
-        return List.of(); // Placeholder - would query repository in full implementation
+    public List<DataArchivalLog> getArchivalLogs(LocalDate startDate, LocalDate endDate, UUID tenantId) {
+        log.debug("Fetching archival logs from {} to {}", startDate, endDate);
+        // Placeholder: actual implementation deferred
+        return List.of();
     }
 
     /**
      * Get recent successful archival executions (placeholder).
      */
     @Transactional(readOnly = true)
-    public List<DataArchivalLog> getSuccessfulArchivalLogs(int days) {
-        return List.of(); // Placeholder - would query repository in full implementation
+    public List<DataArchivalLog> getSuccessfulArchivalLogs(int days, UUID tenantId) {
+        log.debug("Fetching successful archival logs for last {} days", days);
+        // Placeholder: actual implementation deferred
+        return List.of();
     }
 
     /**
      * Get failed archival executions requiring attention (placeholder).
      */
     @Transactional(readOnly = true)
-    public List<DataArchivalLog> getFailedArchivalLogs() {
-        return List.of(); // Placeholder - would query repository in full implementation
+    public List<DataArchivalLog> getFailedArchivalLogs(UUID tenantId) {
+        log.debug("Fetching failed archival logs");
+        // Placeholder: actual implementation deferred
+        return List.of();
     }
 }

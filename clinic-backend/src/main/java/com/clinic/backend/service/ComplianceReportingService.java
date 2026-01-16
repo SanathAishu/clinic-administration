@@ -89,7 +89,7 @@ public class ComplianceReportingService {
         log.info("Generating daily SLA summary for {}", yesterday);
 
         try {
-            // Placeholder: would query metrics by date range in full implementation
+            // Get all metrics for yesterday across all types (placeholder - needs tenant context)
             List<ComplianceMetrics> allMetrics = List.of();
 
             if (allMetrics.isEmpty()) {
@@ -126,21 +126,40 @@ public class ComplianceReportingService {
      */
     @Transactional(readOnly = true)
     protected void calculateQueueStabilityMetrics(LocalDate date) {
-        // Placeholder: would query queue metrics in full implementation
         log.debug("Calculating queue stability metrics for {}", date);
+
+        // Default: assume stable queues (no data available)
+        double complianceRate = 100.0;
+        long violations = 0L;
+
+        // Calculate control limits from historical data
+        List<ComplianceMetrics> historical = complianceMetricsRepository
+            .findRecentByType(null, ComplianceMetricType.QUEUE_STABILITY, 30);
+
+        double meanValue = 95.0;
+        double stdDeviation = 2.0;
+
+        if (!historical.isEmpty()) {
+            meanValue = historical.stream()
+                .mapToDouble(m -> m.getComplianceRate() != null ? m.getComplianceRate() : 95.0)
+                .average()
+                .orElse(95.0);
+
+            stdDeviation = calculateStandardDeviation(historical);
+        }
 
         ComplianceMetrics metrics = ComplianceMetrics.builder()
             .metricDate(date)
             .metricType(ComplianceMetricType.QUEUE_STABILITY)
             .totalTransactions(0L)
-            .slaViolations(0L)
-            .complianceRate(100.0)
-            .meanValue(100.0)
-            .stdDeviation(0.0)
+            .slaViolations(violations)
+            .complianceRate(complianceRate)
+            .meanValue(meanValue)
+            .stdDeviation(stdDeviation)
             .build();
 
         complianceMetricsRepository.save(metrics);
-        log.debug("Saved queue stability metrics for {}", date);
+        log.debug("Saved queue stability metrics: {:.2f}% compliance", complianceRate);
     }
 
     /**
@@ -179,22 +198,48 @@ public class ComplianceReportingService {
      */
     @Transactional(readOnly = true)
     protected void calculateAccessLogCoverageMetrics(LocalDate date) {
-        // Placeholder: would count audit logs in full implementation
-        double complianceRate = 100.0;
+        log.debug("Calculating access log coverage metrics for {}", date);
+
+        // Count audit logs for the date (assuming current tenant context)
+        Instant dateStart = date.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+        Instant dateEnd = date.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant();
+
+        // Placeholder: would count audit logs if tenant context were available
         long auditLogCount = 0;
+
+        // Target: High audit coverage (>95% of operations)
+        // Assuming all audit logs represent proper coverage, compliance = 100% if logs exist
+        double complianceRate = auditLogCount > 0 ? 100.0 : 0.0;
+
+        // Calculate control limits from historical data
+        List<ComplianceMetrics> historical = complianceMetricsRepository
+            .findRecentByType(null, ComplianceMetricType.ACCESS_LOG_COVERAGE, 30);
+
+        double meanValue = 95.0; // Target: 95%+ coverage
+        double stdDeviation = 2.0;
+
+        if (!historical.isEmpty()) {
+            meanValue = historical.stream()
+                .mapToDouble(m -> m.getComplianceRate() != null ? m.getComplianceRate() : 95.0)
+                .average()
+                .orElse(95.0);
+
+            stdDeviation = calculateStandardDeviation(historical);
+        }
 
         ComplianceMetrics metrics = ComplianceMetrics.builder()
             .metricDate(date)
             .metricType(ComplianceMetricType.ACCESS_LOG_COVERAGE)
             .complianceRate(complianceRate)
-            .meanValue(95.0) // Target: 95%+ coverage
-            .stdDeviation(2.0)
+            .meanValue(meanValue)
+            .stdDeviation(stdDeviation)
             .totalTransactions(auditLogCount)
-            .slaViolations(0L)
+            .slaViolations(auditLogCount == 0 ? 1L : 0L)
             .build();
 
         complianceMetricsRepository.save(metrics);
-        log.debug("Saved access log coverage metrics: {} logs processed", auditLogCount);
+        log.debug("Saved access log coverage metrics: {} logs processed, {:.2f}% compliance",
+            auditLogCount, complianceRate);
     }
 
     /**

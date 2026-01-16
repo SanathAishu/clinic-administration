@@ -84,7 +84,7 @@ public class DataRetentionController {
 
         try {
             EntityType type = EntityType.valueOf(entityType);
-            DataRetentionPolicy policy = dataRetentionService.getPolicyForEntityType(type);
+            DataRetentionPolicy policy = dataRetentionService.getPolicyForEntityType(type, tenantId);
 
             if (policy == null) {
                 return ResponseEntity.notFound().build();
@@ -119,7 +119,7 @@ public class DataRetentionController {
 
         try {
             EntityType type = EntityType.valueOf(entityType);
-            DataRetentionPolicy existingPolicy = dataRetentionService.getPolicyForEntityType(type);
+            DataRetentionPolicy existingPolicy = dataRetentionService.getPolicyForEntityType(type, tenantId);
 
             if (existingPolicy == null) {
                 return ResponseEntity.notFound().build();
@@ -157,13 +157,14 @@ public class DataRetentionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
+        UUID tenantId = securityUtils.getCurrentTenantId();
         LocalDate actualStart = startDate != null ? startDate : LocalDate.now().minusDays(30);
         LocalDate actualEnd = endDate != null ? endDate : LocalDate.now();
 
         log.info("Fetching archival logs from {} to {}", actualStart, actualEnd);
 
         try {
-            List<DataArchivalLog> logs = dataRetentionService.getArchivalLogs(actualStart, actualEnd);
+            List<DataArchivalLog> logs = dataRetentionService.getArchivalLogs(actualStart, actualEnd, tenantId);
 
             List<DataArchivalLogDTO> dtos = logs.stream()
                 .map(this::toArchivalLogDTO)
@@ -188,10 +189,11 @@ public class DataRetentionController {
     public ResponseEntity<List<DataArchivalLogDTO>> getRecentArchivalLogs(
             @RequestParam(defaultValue = "7") int days) {
 
+        UUID tenantId = securityUtils.getCurrentTenantId();
         log.info("Fetching recent archival logs for last {} days", days);
 
         try {
-            List<DataArchivalLog> logs = dataRetentionService.getSuccessfulArchivalLogs(days);
+            List<DataArchivalLog> logs = dataRetentionService.getSuccessfulArchivalLogs(days, tenantId);
 
             List<DataArchivalLogDTO> dtos = logs.stream()
                 .map(this::toArchivalLogDTO)
@@ -213,10 +215,11 @@ public class DataRetentionController {
      */
     @GetMapping("/archival-logs/failed")
     public ResponseEntity<List<DataArchivalLogDTO>> getFailedArchivalLogs() {
-        log.info("Fetching failed archival logs");
+        UUID tenantId = securityUtils.getCurrentTenantId();
+        log.info("Fetching failed archival logs for tenant {}", tenantId);
 
         try {
-            List<DataArchivalLog> logs = dataRetentionService.getFailedArchivalLogs();
+            List<DataArchivalLog> logs = dataRetentionService.getFailedArchivalLogs(tenantId);
 
             List<DataArchivalLogDTO> dtos = logs.stream()
                 .map(this::toArchivalLogDTO)
@@ -244,7 +247,7 @@ public class DataRetentionController {
 
         try {
             EntityType type = EntityType.valueOf(entityType);
-            DataRetentionPolicy policy = dataRetentionService.getPolicyForEntityType(type);
+            DataRetentionPolicy policy = dataRetentionService.getPolicyForEntityType(type, tenantId);
 
             if (policy == null) {
                 return ResponseEntity.notFound().build();
