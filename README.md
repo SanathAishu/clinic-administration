@@ -8,16 +8,11 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 
 ### Core Documentation
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture, multi-tenancy, CQRS pattern
+- **[MATHEMATICAL_FOUNDATIONS.md](docs/MATHEMATICAL_FOUNDATIONS.md)** - OR, SPC, discrete math, and optimization theorems
 - **[SECURITY.md](docs/SECURITY.md)** - Authentication, authorization, compliance
 - **[CACHING.md](docs/CACHING.md)** - Redis distributed caching strategy
 - **[API.md](docs/API.md)** - REST API documentation and examples
-- **[Getting Started Guide](docs/README.md)** - Comprehensive project documentation
-- **[CLAUDE.md](docs/CLAUDE.md)** - Claude Code instructions and development guidelines
-
-### Phase Documentation
-- **[Phase E: Quality Assurance & Compliance (ISO 27001)](docs/PHASE_E_IMPLEMENTATION.md)** - Compliance Dashboard, Data Retention, Audit Trails ✅
-- **Phase D: Operations Research & Optimization** - Queue Management, Inventory Optimization, Prescription Enhancement ✅
-- **Phase A-C: Foundation** - Core infrastructure, security, caching ✅
+- **[Documentation Index](docs/README.md)** - Complete documentation reference
 
 ### Database Documentation
 - **[Database Setup](docs/database/setup.md)** - PostgreSQL configuration and access
@@ -136,14 +131,15 @@ clinic-administration/
 │       ├── V7-V16               # Enhanced features (Phases B-D)
 │       ├── V17-V19              # Compliance & QA (Phase E)
 ├── docs/                        # Project documentation
-│   ├── PHASE_E_IMPLEMENTATION.md    # Phase E: Quality Assurance & ISO 27001
 │   ├── ARCHITECTURE.md          # System architecture
+│   ├── MATHEMATICAL_FOUNDATIONS.md  # Mathematical & OR principles
 │   ├── SECURITY.md              # Security & compliance
 │   ├── CACHING.md               # Redis caching strategy
 │   ├── API.md                   # REST API documentation
-│   ├── CLAUDE.md                # Development guidelines
 │   ├── PROJECT_SPECIFICATION.md # Technical specification
-│   └── [other documentation]
+│   ├── VM_SPECS_AND_COSTING.md  # Deployment specifications
+│   ├── README.md                # Documentation index
+│   └── database/                # Database documentation
 └── docker-compose.yml           # Local development environment
 ```
 
@@ -160,7 +156,7 @@ clinic-administration/
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/SanathAishu/clinic-administration.git
+git clone <repository-url>
 cd clinic-administration
 ```
 
