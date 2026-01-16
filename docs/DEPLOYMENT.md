@@ -1,11 +1,14 @@
-# VM Specifications and Cost Analysis for Clinic Management System
+# Deployment Guide
+
+Infrastructure specifications and deployment guidelines for the Clinic Management System.
 
 ## Table of Contents
-1. [Resource Requirements Analysis](#resource-requirements-analysis)
-2. [GCP VM Specifications](#gcp-vm-specifications)
-3. [Cost Estimates (GCP asia-south1 Mumbai)](#cost-estimates-gcp-asia-south1-mumbai)
-4. [Cost Optimization Strategies](#cost-optimization-strategies)
-5. [Scaling Considerations](#scaling-considerations)
+
+1. [Resource Requirements](#resource-requirements-analysis)
+2. [VM Specifications](#gcp-vm-specifications)
+3. [Cost Estimates](#cost-estimates-gcp-asia-south1-mumbai)
+4. [Cost Optimization](#cost-optimization-strategies)
+5. [Scaling Guidelines](#scaling-considerations)
 
 ---
 
