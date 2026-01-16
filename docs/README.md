@@ -11,6 +11,7 @@ Technical documentation for the Clinic Management System.
 | **Database Admins** | [Database Setup](./database/setup.md) |
 | **Security Review** | [Security](./SECURITY.md) |
 | **Planning** | [Roadmap](./ROADMAP.md) |
+| **Students/Learners** | [Mathematical Foundations - Simple](./MATHEMATICAL_FOUNDATIONS_SIMPLE.md) |
 
 ---
 
@@ -50,6 +51,13 @@ Theoretical foundations including:
 - Statistical Process Control (3-Sigma Rule)
 - Discrete Mathematics principles
 - Optimization theorems
+
+### [Mathematical Foundations - Simple](./MATHEMATICAL_FOUNDATIONS_SIMPLE.md)
+Layman explanations with everyday examples:
+- Queuing theory explained via restaurant queues
+- EOQ via household shopping decisions
+- 3-Sigma rule via exam scores
+- Caching via tiffin boxes
 
 ---
 
@@ -124,8 +132,9 @@ docs/
 ├── API.md                         REST API reference
 ├── SECURITY.md                    Security implementation
 ├── CACHING.md                     Caching strategy
-├── MATHEMATICAL_FOUNDATIONS.md    Theoretical foundations
-├── PROJECT_SPECIFICATION.md       Complete specification
+├── MATHEMATICAL_FOUNDATIONS.md         Theoretical foundations
+├── MATHEMATICAL_FOUNDATIONS_SIMPLE.md  Layman explanations
+├── PROJECT_SPECIFICATION.md            Complete specification
 ├── DEPLOYMENT.md                  Infrastructure & deployment
 ├── ROADMAP.md                     Development roadmap
 └── database/
