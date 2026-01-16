@@ -22,7 +22,8 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 
 ### Project Specifications
 - **[Project Specification](docs/PROJECT_SPECIFICATION.md)** - Complete technical specification
-- **[VM Specs & Costing](docs/VM_SPECS_AND_COSTING.md)** - Production deployment guide
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Infrastructure and deployment
+- **[Development Roadmap](docs/ROADMAP.md)** - Future phases (F-J)
 
 ---
 
@@ -137,7 +138,8 @@ clinic-administration/
 │   ├── CACHING.md               # Redis caching strategy
 │   ├── API.md                   # REST API documentation
 │   ├── PROJECT_SPECIFICATION.md # Technical specification
-│   ├── VM_SPECS_AND_COSTING.md  # Deployment specifications
+│   ├── DEPLOYMENT.md            # Infrastructure & deployment
+│   ├── ROADMAP.md               # Development roadmap (F-J)
 │   ├── README.md                # Documentation index
 │   └── database/                # Database documentation
 └── docker-compose.yml           # Local development environment
@@ -325,11 +327,11 @@ See [CACHING.md](docs/CACHING.md) for comprehensive caching documentation.
 
 ## Deployment
 
-See [VM_SPECS_AND_COSTING.md](docs/VM_SPECS_AND_COSTING.md) for production deployment specifications and GCP VM recommendations.
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for production deployment specifications and GCP VM recommendations.
 
 For complete technical specifications, see [PROJECT_SPECIFICATION.md](docs/PROJECT_SPECIFICATION.md).
 
-Recommended configuration: n2-standard-8 (8 vCPU, 32GB RAM) - ₹11,120/month with 1-year CUD
+Recommended configuration: n2-standard-8 (8 vCPU, 32GB RAM)
 
 ## License
 
