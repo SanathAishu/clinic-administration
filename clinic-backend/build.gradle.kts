@@ -17,6 +17,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.boot:spring-boot-starter-amqp")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
 
     // Database
     implementation("org.postgresql:postgresql:42.7.2")
@@ -49,6 +51,9 @@ dependencies {
     // Commons
     implementation("org.apache.commons:commons-lang3:3.14.0")
     implementation("commons-io:commons-io:2.15.1")
+
+    // CSV Export for compliance reports
+    implementation("com.opencsv:opencsv:5.7.1")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
