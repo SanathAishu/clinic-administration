@@ -55,10 +55,9 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
     List<Prescription> findByTenantIdAndStatusAndDeletedAtIsNull(UUID tenantId, PrescriptionStatus status);
 
     @Query("SELECT p FROM Prescription p WHERE p.patient.id = :patientId AND p.tenantId = :tenantId AND " +
-           "p.status = 'ACTIVE' AND p.validUntil >= :today AND p.deletedAt IS NULL")
+           "p.status = 'PENDING' AND p.deletedAt IS NULL")
     List<Prescription> findActivePrescriptionsForPatient(@Param("patientId") UUID patientId,
-                                                          @Param("tenantId") UUID tenantId,
-                                                          @Param("today") LocalDate today);
+                                                          @Param("tenantId") UUID tenantId);
 
     // Date range queries
     @Query("SELECT p FROM Prescription p WHERE p.tenantId = :tenantId AND " +
@@ -67,9 +66,9 @@ public interface PrescriptionRepository extends JpaRepository<Prescription, UUID
                                         @Param("startDate") LocalDate startDate,
                                         @Param("endDate") LocalDate endDate);
 
-    // Expiring prescriptions
-    @Query("SELECT p FROM Prescription p WHERE p.tenantId = :tenantId AND p.status = 'ACTIVE' AND " +
-           "p.validUntil BETWEEN :today AND :futureDate AND p.deletedAt IS NULL")
+    // Prescriptions by date range (renamed from expiring - entity doesn't have validUntil)
+    @Query("SELECT p FROM Prescription p WHERE p.tenantId = :tenantId AND p.status = 'PENDING' AND " +
+           "p.prescriptionDate BETWEEN :today AND :futureDate AND p.deletedAt IS NULL")
     List<Prescription> findExpiringPrescriptions(@Param("tenantId") UUID tenantId,
                                                   @Param("today") LocalDate today,
                                                   @Param("futureDate") LocalDate futureDate);

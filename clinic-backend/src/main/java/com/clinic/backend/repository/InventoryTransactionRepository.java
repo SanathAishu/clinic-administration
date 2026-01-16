@@ -96,7 +96,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
                                                              @Param("tenantId") UUID tenantId,
                                                              Pageable pageable);
 
-    @Query("SELECT it FROM InventoryTransaction it WHERE it.performedBy.id = :userId AND it.tenantId = :tenantId " +
+    @Query("SELECT it FROM InventoryTransaction it WHERE it.createdBy.id = :userId AND it.tenantId = :tenantId " +
            "ORDER BY it.transactionDate DESC")
     List<InventoryTransaction> findByPerformedByIdAndTenantId(@Param("userId") UUID userId, @Param("tenantId") UUID tenantId);
 }

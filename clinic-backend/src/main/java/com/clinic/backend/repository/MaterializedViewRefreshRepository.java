@@ -1,10 +1,12 @@
 package com.clinic.backend.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 
 /**
  * Repository for refreshing materialized views.
@@ -15,9 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
  * - mv_user_notification_summary
  *
  * These methods are called by the MaterializedViewRefreshService on a scheduled basis.
+ *
+ * Note: This repository uses EntityManager for native query execution instead of
+ * extending JpaRepository, since it only executes stored procedures and native queries
+ * without managing any entities.
  */
 @Repository
-public interface MaterializedViewRefreshRepository extends JpaRepository<Object, Long> {
+@RequiredArgsConstructor
+@Slf4j
+public class MaterializedViewRefreshRepository {
+
+    private final EntityManager entityManager;
 
     /**
      * Refreshes the patient clinical summary materialized view.
@@ -27,10 +37,11 @@ public interface MaterializedViewRefreshRepository extends JpaRepository<Object,
      *
      * Uses REFRESH MATERIALIZED VIEW CONCURRENTLY to avoid blocking reads.
      */
-    @Modifying
     @Transactional
-    @Query(value = "SELECT refresh_patient_clinical_summary()", nativeQuery = true)
-    void refreshPatientClinicalSummary();
+    public void refreshPatientClinicalSummary() {
+        Query query = entityManager.createNativeQuery("SELECT refresh_patient_clinical_summary()");
+        query.executeUpdate();
+    }
 
     /**
      * Refreshes the billing summary materialized view.
@@ -40,10 +51,11 @@ public interface MaterializedViewRefreshRepository extends JpaRepository<Object,
      *
      * Uses REFRESH MATERIALIZED VIEW CONCURRENTLY to avoid blocking reads.
      */
-    @Modifying
     @Transactional
-    @Query(value = "SELECT refresh_billing_summary()", nativeQuery = true)
-    void refreshBillingSummary();
+    public void refreshBillingSummary() {
+        Query query = entityManager.createNativeQuery("SELECT refresh_billing_summary()");
+        query.executeUpdate();
+    }
 
     /**
      * Refreshes the notification summary materialized view.
@@ -53,8 +65,9 @@ public interface MaterializedViewRefreshRepository extends JpaRepository<Object,
      *
      * Uses REFRESH MATERIALIZED VIEW CONCURRENTLY to avoid blocking reads.
      */
-    @Modifying
     @Transactional
-    @Query(value = "SELECT refresh_notification_summary()", nativeQuery = true)
-    void refreshNotificationSummary();
+    public void refreshNotificationSummary() {
+        Query query = entityManager.createNativeQuery("SELECT refresh_notification_summary()");
+        query.executeUpdate();
+    }
 }

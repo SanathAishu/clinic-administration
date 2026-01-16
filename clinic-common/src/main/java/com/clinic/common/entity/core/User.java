@@ -14,7 +14,8 @@ import java.util.Set;
 @Table(name = "users", indexes = {
     @Index(name = "idx_users_tenant", columnList = "tenant_id"),
     @Index(name = "idx_users_email", columnList = "email"),
-    @Index(name = "idx_users_status", columnList = "status")
+    @Index(name = "idx_users_status", columnList = "status"),
+    @Index(name = "idx_users_branch", columnList = "branch_id")
 }, uniqueConstraints = {
     @UniqueConstraint(name = "users_tenant_email_unique", columnNames = {"tenant_id", "email"})
 })
@@ -28,6 +29,10 @@ public class User extends SoftDeletableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false, insertable = false, updatable = false)
     private Tenant tenant;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
 
     @Column(name = "email", nullable = false)
     @NotBlank(message = "Email is required")

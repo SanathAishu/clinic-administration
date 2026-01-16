@@ -148,10 +148,10 @@ public class TenantAwareCacheKeyGenerator implements KeyGenerator {
      *
      * <p>Conversion Logic:
      * <ul>
-     *   <li>null → "null"</li>
-     *   <li>UUID → UUID string representation</li>
-     *   <li>Entity with getId() → entity.getId().toString()</li>
-     *   <li>Other objects → obj.toString()</li>
+     *   <li>null to "null"</li>
+     *   <li>UUID to UUID string representation</li>
+     *   <li>Entity with getId() to entity.getId().toString()</li>
+     *   <li>Other objects to obj.toString()</li>
      * </ul>
      *
      * @param param the method parameter

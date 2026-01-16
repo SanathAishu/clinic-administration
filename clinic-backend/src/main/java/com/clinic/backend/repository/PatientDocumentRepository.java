@@ -69,7 +69,7 @@ public interface PatientDocumentRepository extends JpaRepository<PatientDocument
                                            @Param("referenceId") UUID referenceId,
                                            @Param("tenantId") UUID tenantId);
 
-    // Storage path lookup (Bijective mapping: path ↔ document)
+    // Storage path lookup (Bijective mapping: path to document)
     Optional<PatientDocument> findByStoragePathAndTenantIdAndDeletedAtIsNull(String storagePath, UUID tenantId);
 
     // Checksum lookup (for duplicate detection)

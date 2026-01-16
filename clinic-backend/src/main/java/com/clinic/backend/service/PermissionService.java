@@ -19,7 +19,7 @@ public class PermissionService {
     private final PermissionRepository permissionRepository;
 
     /**
-     * Create new permission (Bijective function: (resource, action) ↔ permission)
+     * Create new permission (Bijective function: (resource, action) to permission)
      * Permissions are shared across all tenants
      */
     @Transactional
@@ -89,14 +89,14 @@ public class PermissionService {
     }
 
     /**
-     * Get permissions for role (Graph traversal: Role → Permissions)
+     * Get permissions for role (Graph traversal: Role to Permissions)
      */
     public List<Permission> getPermissionsForRole(UUID roleId) {
         return permissionRepository.findByRoleId(roleId);
     }
 
     /**
-     * Get permissions for user (Graph traversal: User → Roles → Permissions)
+     * Get permissions for user (Graph traversal: User to Roles to Permissions)
      * Returns the union of all permissions from all user's roles
      */
     public List<Permission> getPermissionsForUser(UUID userId, UUID tenantId) {

@@ -32,7 +32,7 @@ public class RoleService {
     private final PermissionRepository permissionRepository;
 
     /**
-     * Create new role (Injective function within tenant: (name, tenantId) → role)
+     * Create new role (Injective function within tenant: (name, tenantId) to role)
      */
     @Transactional
     @CacheEvict(value = "roles", allEntries = true)
@@ -125,7 +125,7 @@ public class RoleService {
     }
 
     /**
-     * Get roles for user (Graph traversal: User → Roles)
+     * Get roles for user (Graph traversal: User to Roles)
      */
     public List<Role> getRolesForUser(UUID userId, UUID tenantId) {
         return roleRepository.findByUserIdAndTenantId(userId, tenantId);

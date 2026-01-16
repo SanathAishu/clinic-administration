@@ -7,7 +7,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {RoleMapper.class})
+@Mapper(componentModel = "spring", uses = {RoleMapper.class}, unmappedTargetPolicy = ReportingPolicy.WARN)
 public interface UserMapper {
 
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
@@ -20,6 +20,7 @@ public interface UserMapper {
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "tenant", ignore = true) // Set by service from tenant context
+    @Mapping(target = "branch", ignore = true) // Will be set by service from branchId
     @Mapping(target = "loginAttempts", ignore = true)
     @Mapping(target = "lockedUntil", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)

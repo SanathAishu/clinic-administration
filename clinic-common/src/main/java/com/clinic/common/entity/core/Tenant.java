@@ -88,6 +88,26 @@ public class Tenant extends BaseEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    /**
+     * Subscription Period Invariant (Discrete Math: Sequences & Recurrence)
+     * Ensures subscription has positive duration
+     */
+    @PrePersist
+    @PreUpdate
+    protected void validateSubscriptionPeriod() {
+        if (subscriptionEndDate != null) {
+            if (subscriptionEndDate.isBefore(subscriptionStartDate) ||
+                subscriptionEndDate.equals(subscriptionStartDate)) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: Subscription end date (%s) must be after start date (%s)",
+                        subscriptionEndDate, subscriptionStartDate
+                    )
+                );
+            }
+        }
+    }
+
     public boolean isDeleted() {
         return deletedAt != null;
     }

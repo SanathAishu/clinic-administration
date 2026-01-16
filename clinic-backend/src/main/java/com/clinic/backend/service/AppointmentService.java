@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 import java.util.*;
 
 /**
@@ -44,6 +45,7 @@ public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentViewRepository appointmentViewRepository;
+    private final QueueManagementService queueManagementService;
 
     // ================================
     // Valid Status Transitions (DAG)
@@ -232,12 +234,19 @@ public class AppointmentService {
 
     /**
      * Create new appointment and evict all related caches.
-     * Evicts: today's appointments, available slots, and appointment details caches.
+     * Evicts: today's appointments, available slots, appointment details, and queue status caches.
+     *
+     * Integration with QueueManagementService:
+     * - Generates monotonically increasing token number per doctor per day
+     * - Updates appointment with token before saving
+     * - Evicts queue-related caches to ensure fresh status for displays
      */
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "appointments:today", key = "#tenantId"),
-            @CacheEvict(value = "appointments:slots", allEntries = true)
+            @CacheEvict(value = "appointments:slots", allEntries = true),
+            @CacheEvict(value = "queue_status", allEntries = true),
+            @CacheEvict(value = "queue_positions", allEntries = true)
     })
     public Appointment createAppointment(Appointment appointment, UUID tenantId) {
         log.debug("Creating appointment for patient: {} with doctor: {}",
@@ -270,7 +279,31 @@ public class AppointmentService {
         }
 
         Appointment saved = appointmentRepository.save(appointment);
-        log.info("Created appointment: {}", saved.getId());
+
+        // Theorem 6 (Token Monotonicity): Generate unique token per doctor per day
+        // Token ensures FIFO queue discipline and provides unique sequence numbers
+        try {
+            LocalDate appointmentDate = appointment.getAppointmentTime()
+                    .atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalTime appointmentTime = appointment.getAppointmentTime()
+                    .atZone(ZoneId.systemDefault()).toLocalTime();
+
+            Integer tokenNumber = queueManagementService.generateTokenNumber(
+                    appointment.getDoctor().getId(),
+                    tenantId,
+                    appointmentDate,
+                    appointmentTime
+            );
+
+            saved.setTokenNumber(tokenNumber);
+            saved = appointmentRepository.save(saved);
+            log.info("Created appointment: {} with token: {}", saved.getId(), tokenNumber);
+        } catch (Exception e) {
+            log.error("Error generating token for appointment {}: {}", saved.getId(), e.getMessage());
+            // Don't fail appointment creation if token generation fails
+            // Token generation is additive, not critical to appointment creation
+        }
+
         return saved;
     }
 
@@ -301,93 +334,108 @@ public class AppointmentService {
 
     /**
      * Confirm appointment and evict related caches.
-     * Status change affects today's appointments and details.
+     * Status change affects today's appointments, details, and queue status.
      */
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "appointments:today", key = "#tenantId"),
-            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id"),
+            @CacheEvict(value = "queue_status", allEntries = true),
+            @CacheEvict(value = "wait_times", allEntries = true)
     })
     public Appointment confirmAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.CONFIRMED);
         appointment.confirm();
         Appointment saved = appointmentRepository.save(appointment);
+        queueManagementService.evictQueueCaches(id);
         log.info("Confirmed appointment: {}", saved.getId());
         return saved;
     }
 
     /**
      * Start appointment and evict related caches.
-     * Status change affects today's appointments and details.
+     * Status change affects today's appointments, details, and queue status.
      */
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "appointments:today", key = "#tenantId"),
-            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id"),
+            @CacheEvict(value = "queue_status", allEntries = true),
+            @CacheEvict(value = "wait_times", allEntries = true)
     })
     public Appointment startAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.IN_PROGRESS);
         appointment.start();
         Appointment saved = appointmentRepository.save(appointment);
+        queueManagementService.evictQueueCaches(id);
         log.info("Started appointment: {}", saved.getId());
         return saved;
     }
 
     /**
      * Complete appointment and evict related caches.
-     * Status change affects today's appointments, available slots, and details.
+     * Status change affects today's appointments, available slots, details, and queue status.
      */
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "appointments:today", key = "#tenantId"),
             @CacheEvict(value = "appointments:slots", allEntries = true),
-            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id"),
+            @CacheEvict(value = "queue_status", allEntries = true),
+            @CacheEvict(value = "wait_times", allEntries = true)
     })
     public Appointment completeAppointment(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.COMPLETED);
         appointment.complete();
         Appointment saved = appointmentRepository.save(appointment);
+        queueManagementService.evictQueueCaches(id);
         log.info("Completed appointment: {}", saved.getId());
         return saved;
     }
 
     /**
      * Cancel appointment and evict related caches.
-     * Cancellation frees up slots and affects today's appointments.
+     * Cancellation frees up slots and affects today's appointments and queue status.
      */
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "appointments:today", key = "#tenantId"),
             @CacheEvict(value = "appointments:slots", allEntries = true),
-            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id"),
+            @CacheEvict(value = "queue_status", allEntries = true),
+            @CacheEvict(value = "wait_times", allEntries = true)
     })
     public Appointment cancelAppointment(UUID id, UUID tenantId, User cancelledBy, String reason) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.CANCELLED);
         appointment.cancel(cancelledBy, reason);
         Appointment saved = appointmentRepository.save(appointment);
+        queueManagementService.evictQueueCaches(id);
         log.info("Cancelled appointment: {}", saved.getId());
         return saved;
     }
 
     /**
      * Mark appointment as no-show and evict related caches.
-     * No-show frees up slots and affects today's appointments.
+     * No-show frees up slots, affects today's appointments, and queue status.
      */
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "appointments:today", key = "#tenantId"),
             @CacheEvict(value = "appointments:slots", allEntries = true),
-            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id")
+            @CacheEvict(value = "appointments:details", key = "#tenantId + ':' + #id"),
+            @CacheEvict(value = "queue_status", allEntries = true),
+            @CacheEvict(value = "wait_times", allEntries = true)
     })
     public Appointment markNoShow(UUID id, UUID tenantId) {
         Appointment appointment = getAppointmentById(id, tenantId);
         validateStatusTransition(appointment.getStatus(), AppointmentStatus.NO_SHOW);
         appointment.markNoShow();
         Appointment saved = appointmentRepository.save(appointment);
+        queueManagementService.evictQueueCaches(id);
         log.warn("Marked appointment as no-show: {}", saved.getId());
         return saved;
     }

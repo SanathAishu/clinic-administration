@@ -13,7 +13,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "lab_results", indexes = {
-    @Index(name = "idx_lab_results_test", columnList = "lab_test_id")
+    @Index(name = "idx_lab_results_test", columnList = "lab_test_id"),
+    @Index(name = "idx_lab_results_tenant", columnList = "tenant_id")
 })
 @Getter
 @Setter
@@ -27,6 +28,11 @@ public class LabResult {
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
+
+    // Multi-tenancy: Direct tenant_id field for isolation
+    @Column(name = "tenant_id", nullable = false)
+    @NotNull(message = "Tenant ID is required")
+    private UUID tenantId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lab_test_id", nullable = false)

@@ -71,9 +71,15 @@ public class RedisCacheConfig implements CachingConfigurer {
     public static final String APPOINTMENTS_TODAY_CACHE = "appointments:today";
     public static final String BILLINGS_CACHE = "billings";
     public static final String BILLINGS_SUMMARY_CACHE = "billings:summary";
+    public static final String QUEUE_STATUS_CACHE = "queue_status";
+    public static final String WAIT_TIMES_CACHE = "wait_times";
+    public static final String QUEUE_POSITIONS_CACHE = "queue_positions";
+    public static final String SERVICE_RATES_CACHE = "service_rates";
+    public static final String ARRIVAL_RATES_CACHE = "arrival_rates";
 
     /**
      * TTL configuration (based on data volatility).
+     * M/M/1 Queuing Theory: Queue data is highly volatile and requires short TTLs
      */
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(5);
     private static final Duration ROLES_TTL = Duration.ofMinutes(10);
@@ -83,6 +89,11 @@ public class RedisCacheConfig implements CachingConfigurer {
     private static final Duration APPOINTMENTS_TODAY_TTL = Duration.ofMinutes(1);
     private static final Duration BILLINGS_TTL = Duration.ofMinutes(3);
     private static final Duration BILLINGS_SUMMARY_TTL = Duration.ofMinutes(10);
+    private static final Duration QUEUE_STATUS_TTL = Duration.ofSeconds(30);
+    private static final Duration WAIT_TIMES_TTL = Duration.ofMinutes(5);
+    private static final Duration QUEUE_POSITIONS_TTL = Duration.ofMinutes(5);
+    private static final Duration SERVICE_RATES_TTL = Duration.ofMinutes(60);
+    private static final Duration ARRIVAL_RATES_TTL = Duration.ofMinutes(5);
 
     /**
      * Configures RedisCacheManager with per-cache TTL settings.
@@ -118,6 +129,14 @@ public class RedisCacheConfig implements CachingConfigurer {
         cacheConfigurations.put(APPOINTMENTS_TODAY_CACHE, defaultConfig.entryTtl(APPOINTMENTS_TODAY_TTL));
         cacheConfigurations.put(BILLINGS_CACHE, defaultConfig.entryTtl(BILLINGS_TTL));
         cacheConfigurations.put(BILLINGS_SUMMARY_CACHE, defaultConfig.entryTtl(BILLINGS_SUMMARY_TTL));
+
+        // Queue Management Caches - M/M/1 Queuing Theory (Phase D)
+        // Queue data is highly volatile and requires frequent refresh
+        cacheConfigurations.put(QUEUE_STATUS_CACHE, defaultConfig.entryTtl(QUEUE_STATUS_TTL));
+        cacheConfigurations.put(WAIT_TIMES_CACHE, defaultConfig.entryTtl(WAIT_TIMES_TTL));
+        cacheConfigurations.put(QUEUE_POSITIONS_CACHE, defaultConfig.entryTtl(QUEUE_POSITIONS_TTL));
+        cacheConfigurations.put(SERVICE_RATES_CACHE, defaultConfig.entryTtl(SERVICE_RATES_TTL));
+        cacheConfigurations.put(ARRIVAL_RATES_CACHE, defaultConfig.entryTtl(ARRIVAL_RATES_TTL));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

@@ -4,53 +4,87 @@ A comprehensive, multi-tenant clinic management system for the Indian healthcare
 
 ## 📚 Documentation
 
-**Complete documentation is available in the [`docs/`](docs/) directory:**
+**Complete documentation is available in the project root and [`docs/`](docs/) directory:**
 
-- **[Getting Started Guide](docs/README.md)** - Start here for comprehensive documentation
+### Core Documentation
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture, multi-tenancy, CQRS pattern
+- **[SECURITY.md](SECURITY.md)** - Authentication, authorization, compliance
+- **[CACHING.md](CACHING.md)** - Redis distributed caching strategy
+- **[API.md](API.md)** - REST API documentation and examples
+- **[Getting Started Guide](docs/README.md)** - Comprehensive project documentation
+
+### Database Documentation
 - **[Database Setup](docs/database/setup.md)** - PostgreSQL configuration and access
 - **[Database Migrations](docs/database/migrations.md)** - Flyway migration guide
 - **[Materialized Views](docs/database/materialized-views/)** - Performance optimization (Phase 1 complete ✅)
 - **[Read Views (CQRS)](docs/database/read-views.md)** - 26 database views for optimized READ operations ✅
 
+### Project Specifications
+- **[Project Specification](docs/PROJECT_SPECIFICATION.md)** - Complete technical specification
+- **[VM Specs & Costing](docs/VM_SPECS_AND_COSTING.md)** - Production deployment guide
+
 ---
 
 ## Features
 
-- Multi-tenant SaaS architecture with Row Level Security (RLS)
-- **Materialized Views** - Phase 1 complete with 90-95% query performance improvement ✅
-- **CQRS Read Views** - 26 database views for optimized READ operations ✅
-- DPDP Act 2023, IT Act 2000, and ABDM compliance
-- ABHA ID integration (Ayushman Bharat Health Account)
-- Comprehensive patient care workflow
-- Inventory and billing management
-- Role-based access control (RBAC) with fine-grained permissions
-- JWT-based authentication with session management
-- Audit logging with 7-year retention (partitioned by month)
-- Real-time notifications
-- Document management with MinIO (S3-compatible)
-- Monitoring with Prometheus & Grafana
-- Centralized logging with ELK Stack
-- Automated scheduled refresh for materialized views
+### Core Features ✅
+- **Multi-tenant SaaS** architecture with PostgreSQL Row Level Security (RLS)
+- **JWT Authentication** - Stateless authentication with 15-minute access tokens, 7-day refresh tokens
+- **RBAC Authorization** - Fine-grained role-based access control with method-level security
+- **Redis Distributed Caching** - 7 cache regions with tenant-aware keys and TTL-based eviction
+- **CQRS Pattern** - 26 database read views for optimized queries
+- **Materialized Views** - 3 views for expensive aggregations (90-95% performance improvement)
+- **Audit Logging** - Comprehensive audit trail with 7-year retention (monthly partitions)
+- **Soft Delete Only** - Regulatory compliance with data retention requirements
+- **Input Validation** - Bean Validation with custom validators
+- **Security** - Multi-layer security with encryption, XSS/CSRF protection, SQL injection prevention
+
+### Compliance ✅
+- **DPDP Act 2023** - Consent management, data breach notification, right to erasure
+- **IT Act 2000** - Encryption, access controls, audit logs
+- **ABDM Guidelines** - ABHA ID integration (14-digit unique health identifier)
+- **Clinical Establishments Act** - 7-year minimum record retention
+
+### Infrastructure ✅
+- **PostgreSQL 16** - Primary database with RLS, partitioning, materialized views
+- **Redis 7** - Distributed caching layer
+- **MinIO** - S3-compatible object storage for documents
+- **RabbitMQ** - Message broker for async operations
+- **Prometheus + Grafana** - Metrics collection and visualization
+- **ELK Stack** - Centralized logging (Elasticsearch, Logstash, Kibana)
+- **Docker Compose** - Containerized local development environment
 
 ## Technology Stack
 
 ### Backend
-- Java 21 LTS
-- Spring Boot 3.3.7
-- Spring Security 6 (JWT)
-- Spring Data JPA + Hibernate 6.4+
-- PostgreSQL 16 with Row Level Security
-- Flyway migrations
-- MapStruct for DTOs
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Runtime | Java (Eclipse Temurin) | 21 LTS | Application runtime |
+| Framework | Spring Boot | 3.3.7 | Web framework |
+| Security | Spring Security | 6.x | Authentication & authorization |
+| Data Access | Spring Data JPA | 3.3.x | ORM abstraction |
+| ORM | Hibernate | 6.4+ | Object-relational mapping |
+| Migrations | Flyway | 10.x | Database version control |
+| DTO Mapping | MapStruct | 1.5+ | Compile-time mapping |
+| Validation | Hibernate Validator | 8.x | Bean validation (JSR-380) |
+| API Docs | SpringDoc OpenAPI | 2.x | Swagger/OpenAPI 3.0 |
+| Utilities | Lombok | 1.18.x | Boilerplate reduction |
+| JWT | jjwt (Java JWT) | 0.12.x | JWT token handling |
 
 ### Infrastructure
-- Docker & Docker Compose
-- PostgreSQL 16
-- Redis 7
-- MinIO (S3-compatible storage)
-- RabbitMQ
-- Prometheus + Grafana
-- ELK Stack (Elasticsearch, Logstash, Kibana)
+| Component | Technology | Version | Purpose |
+|-----------|-----------|---------|---------|
+| Database | PostgreSQL | 16 | Primary data store |
+| Cache | Redis | 7 | Distributed caching |
+| Object Storage | MinIO | Latest | Document storage (S3-compatible) |
+| Message Queue | RabbitMQ | 3 | Async messaging |
+| Metrics | Prometheus | Latest | Time-series metrics |
+| Dashboards | Grafana | Latest | Metrics visualization |
+| Log Storage | Elasticsearch | 8.12.0 | Centralized logging |
+| Log Processing | Logstash | 8.12.0 | Log aggregation |
+| Log Visualization | Kibana | 8.12.0 | Log exploration |
+| Containerization | Docker | Latest | Container runtime |
+| Orchestration | Docker Compose | Latest | Multi-container apps |
 
 ## Project Structure
 
@@ -83,59 +117,68 @@ clinic-administration/
 
 ### Prerequisites
 
-- Java 21 LTS
-- Docker & Docker Compose
-- Gradle 8.5+
+- **Java 21 LTS** (Eclipse Temurin recommended)
+- **Docker & Docker Compose** (for infrastructure services)
+- **Gradle 8.5+** (wrapper included)
+- **Git** (for version control)
 
 ### Quick Start
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/SanathAishu/clinic-administration.git
 cd clinic-administration
 ```
 
-2. Copy environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
-
-3. Start infrastructure services:
+2. **Start infrastructure services:**
 ```bash
 docker compose up -d
 ```
 
-This will start:
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- MinIO (port 9000, console 9001)
-- RabbitMQ (port 5672, management 15672)
-- Prometheus (port 9090)
-- Grafana (port 3001)
-- Elasticsearch (port 9200)
-- Logstash (port 5000)
-- Kibana (port 5601)
+This will start all required services:
+- **PostgreSQL 16** (port 5432) - Primary database
+- **Redis 7** (port 6379) - Distributed cache
+- **MinIO** (port 9000, console 9001) - Object storage
+- **RabbitMQ** (port 5672, management 15672) - Message broker
+- **Prometheus** (port 9090) - Metrics collection
+- **Grafana** (port 3001) - Metrics dashboards
+- **Elasticsearch** (port 9200) - Log storage
+- **Logstash** (port 5000) - Log processing
+- **Kibana** (port 5601) - Log visualization
 
-4. Run database migrations:
+3. **Run database migrations:**
 ```bash
 cd clinic-migrations
 ../gradlew flywayMigrate
 ```
 
-5. Build and run the application:
+This will apply 6 migrations:
+- V1: Foundation tables (tenants, users, roles)
+- V2: Identity & access tables (sessions, permissions)
+- V3: Patient care tables (patients, appointments, medical records)
+- V4: Operations tables (billing, inventory, notifications)
+- V5: Materialized views (3 views for expensive aggregations)
+- V6: CQRS read views (26 views for optimized queries)
+
+4. **Build and run the application:**
 ```bash
 cd ../clinic-backend
 ../gradlew bootRun
 ```
 
-The application will be available at http://localhost:8080
+The application will be available at:
+- **Backend API**: http://localhost:8080/api
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **Health Check**: http://localhost:8080/actuator/health
 
 ### API Documentation
 
-Once the application is running, access the API documentation at:
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- OpenAPI JSON: http://localhost:8080/api/docs
+Once the application is running, access the interactive API documentation:
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+- **OpenAPI YAML**: http://localhost:8080/v3/api-docs.yaml
+
+See [API.md](API.md) for comprehensive API documentation.
 
 ### Monitoring & Observability
 
@@ -180,30 +223,61 @@ The system uses a comprehensive 23-table schema organized in 4 groups:
 
 ## Development
 
-### Build
+### Build Commands
 
 ```bash
-./gradlew build
-```
+# Clean build
+./gradlew clean build
 
-### Run Tests
+# Build without tests
+./gradlew clean build -x test
 
-```bash
+# Run tests only
 ./gradlew test
+
+# Run application
+./gradlew :clinic-backend:bootRun
+
+# Check dependencies
+./gradlew dependencies
 ```
 
-### Database Migrations
+### Database Operations
 
-Create new migration:
 ```bash
-cd clinic-migrations/src/main/resources/db/migration
-# Create V{version}__{description}.sql
-```
-
-Apply migrations:
-```bash
+# Run migrations
 ./gradlew flywayMigrate
+
+# Check migration status
+./gradlew flywayInfo
+
+# Validate migrations
+./gradlew flywayValidate
+
+# Repair failed migration
+./gradlew flywayRepair
 ```
+
+### Cache Operations
+
+```bash
+# Connect to Redis
+docker exec -it clinic-redis redis-cli
+
+# List all cache keys
+KEYS *
+
+# List keys for specific tenant
+KEYS 550e8400-e29b-41d4-a716-446655440000:*
+
+# Get cache value
+GET "550e8400-e29b-41d4-a716-446655440000:users:list"
+
+# Clear all cache (use with caution)
+FLUSHALL
+```
+
+See [CACHING.md](CACHING.md) for comprehensive caching documentation.
 
 ## Compliance
 

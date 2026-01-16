@@ -21,7 +21,7 @@ public class SessionService {
     private final SessionRepository sessionRepository;
 
     /**
-     * Create new session (Bijective mapping: tokenJti ↔ session)
+     * Create new session (Bijective mapping: tokenJti to session)
      */
     @Transactional
     public Session createSession(Session session) {

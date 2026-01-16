@@ -8,7 +8,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.WARN)
 public interface PatientMapper {
 
     @Mapping(target = "fullName", expression = "java(patient.getFullName())")
@@ -19,11 +19,13 @@ public interface PatientMapper {
     List<PatientResponseDTO> toResponseDTOList(List<Patient> patients);
 
     @Mapping(target = "createdBy", ignore = true) // Will be set by service
+    @Mapping(target = "primaryBranch", ignore = true) // Will be set by service from branchId
     Patient toEntity(CreatePatientRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "primaryBranch", ignore = true) // Will be set by service if branchId is provided
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "tenantId", ignore = true)

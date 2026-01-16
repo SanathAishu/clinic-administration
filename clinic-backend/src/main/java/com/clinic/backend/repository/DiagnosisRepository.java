@@ -40,7 +40,10 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID> {
     Page<Diagnosis> findByMedicalRecordIdAndTenantId(UUID medicalRecordId, UUID tenantId, Pageable pageable);
 
     // ICD-10 code queries
-    Optional<Diagnosis> findByIcd10CodeAndPatientIdAndTenantId(String icd10Code, UUID patientId, UUID tenantId);
+    @Query("SELECT d FROM Diagnosis d WHERE d.icd10Code = :icd10Code AND d.medicalRecord.patient.id = :patientId AND d.tenantId = :tenantId")
+    Optional<Diagnosis> findByIcd10CodeAndPatientIdAndTenantId(@Param("icd10Code") String icd10Code,
+                                                                 @Param("patientId") UUID patientId,
+                                                                 @Param("tenantId") UUID tenantId);
 
     @Query("SELECT d FROM Diagnosis d WHERE d.tenantId = :tenantId AND d.icd10Code = :icd10Code " +
            "ORDER BY d.diagnosedAt DESC")
@@ -56,7 +59,7 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID> {
     List<Diagnosis> findByDiagnosisNameContaining(@Param("tenantId") UUID tenantId, @Param("name") String name);
 
     // Diagnosis type queries
-    @Query("SELECT d FROM Diagnosis d WHERE d.patient.id = :patientId AND d.tenantId = :tenantId AND " +
+    @Query("SELECT d FROM Diagnosis d WHERE d.medicalRecord.patient.id = :patientId AND d.tenantId = :tenantId AND " +
            "d.diagnosisType = :type ORDER BY d.diagnosedAt DESC")
     List<Diagnosis> findPatientDiagnosesByType(@Param("patientId") UUID patientId,
                                                 @Param("tenantId") UUID tenantId,
@@ -68,7 +71,7 @@ public interface DiagnosisRepository extends JpaRepository<Diagnosis, UUID> {
     List<Diagnosis> findBySeverity(@Param("tenantId") UUID tenantId, @Param("severity") String severity);
 
     // Doctor diagnoses
-    @Query("SELECT d FROM Diagnosis d WHERE d.diagnosedBy.id = :doctorId AND d.tenantId = :tenantId " +
+    @Query("SELECT d FROM Diagnosis d WHERE d.createdBy.id = :doctorId AND d.tenantId = :tenantId " +
            "ORDER BY d.diagnosedAt DESC")
     Page<Diagnosis> findByDoctorId(@Param("doctorId") UUID doctorId,
                                     @Param("tenantId") UUID tenantId,

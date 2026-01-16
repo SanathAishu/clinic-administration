@@ -1,5 +1,6 @@
 package com.clinic.common.entity.patient;
 
+import com.clinic.common.entity.core.Branch;
 import com.clinic.common.entity.core.User;
 import com.clinic.common.entity.SoftDeletableEntity;
 import com.clinic.common.enums.BloodGroup;
@@ -12,6 +13,7 @@ import lombok.*;
 import org.hibernate.annotations.Type;
 
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.UUID;
 
 @Entity
@@ -19,7 +21,8 @@ import java.util.UUID;
     @Index(name = "idx_patients_tenant", columnList = "tenant_id"),
     @Index(name = "idx_patients_phone", columnList = "phone"),
     @Index(name = "idx_patients_abha", columnList = "abha_id"),
-    @Index(name = "idx_patients_name", columnList = "tenant_id, last_name, first_name")
+    @Index(name = "idx_patients_name", columnList = "tenant_id, last_name, first_name"),
+    @Index(name = "idx_patients_branch", columnList = "branch_id")
 })
 @Getter
 @Setter
@@ -27,6 +30,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class Patient extends SoftDeletableEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch primaryBranch;
 
     // Demographics
     @Column(name = "first_name", nullable = false, length = 100)
@@ -147,7 +154,14 @@ public class Patient extends SoftDeletableEntity {
         return firstName + " " + lastName;
     }
 
+    /**
+     * Calculate patient age accounting for birthday in current year
+     * Uses Period.between() to correctly handle leap years and birthday timing
+     */
     public int getAge() {
-        return LocalDate.now().getYear() - dateOfBirth.getYear();
+        if (dateOfBirth == null) {
+            return 0;
+        }
+        return Period.between(dateOfBirth, LocalDate.now()).getYears();
     }
 }

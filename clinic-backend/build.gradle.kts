@@ -7,6 +7,7 @@ plugins {
 dependencies {
     // Multi-module dependencies
     implementation(project(":clinic-common"))
+    implementation(project(":clinic-migrations"))
 
     // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -21,7 +22,7 @@ dependencies {
     implementation("org.postgresql:postgresql:42.7.2")
     implementation("org.flywaydb:flyway-core:10.8.1")
     implementation("org.flywaydb:flyway-database-postgresql:10.8.1")
-    implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.7.0")
+    implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.9.0")
 
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")

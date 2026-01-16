@@ -15,7 +15,7 @@ import java.util.UUID;
 @Repository
 public interface SessionRepository extends JpaRepository<Session, UUID> {
 
-    // Token-based lookup (Bijective mapping: token ↔ session)
+    // Token-based lookup (Bijective mapping: token to session)
     Optional<Session> findByTokenJti(String tokenJti);
 
     Optional<Session> findByRefreshTokenJti(String refreshTokenJti);

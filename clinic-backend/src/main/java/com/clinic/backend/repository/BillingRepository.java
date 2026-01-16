@@ -62,13 +62,13 @@ public interface BillingRepository extends JpaRepository<Billing, UUID> {
            "b.paymentStatus IN ('PENDING', 'PARTIAL') AND b.deletedAt IS NULL ORDER BY b.invoiceDate ASC")
     List<Billing> findPendingBillingsForPatient(@Param("patientId") UUID patientId, @Param("tenantId") UUID tenantId);
 
-    // Overdue payments
+    // Overdue payments (based on invoice date)
     @Query("SELECT b FROM Billing b WHERE b.tenantId = :tenantId AND b.paymentStatus IN ('PENDING', 'PARTIAL') AND " +
-           "b.dueDate < :today AND b.deletedAt IS NULL ORDER BY b.dueDate ASC")
+           "b.invoiceDate < :today AND b.deletedAt IS NULL ORDER BY b.invoiceDate ASC")
     List<Billing> findOverduePayments(@Param("tenantId") UUID tenantId, @Param("today") LocalDate today);
 
     @Query("SELECT b FROM Billing b WHERE b.tenantId = :tenantId AND b.paymentStatus IN ('PENDING', 'PARTIAL') AND " +
-           "b.dueDate < :dueDate AND b.deletedAt IS NULL ORDER BY b.dueDate ASC")
+           "b.invoiceDate < :dueDate AND b.deletedAt IS NULL ORDER BY b.invoiceDate ASC")
     List<Billing> findOverdueBillings(@Param("tenantId") UUID tenantId, @Param("dueDate") LocalDate dueDate);
 
     // Payment method queries

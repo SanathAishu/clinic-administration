@@ -94,5 +94,64 @@ public class InventoryTransaction extends TenantAwareEntity {
         if (totalAmount == null && unitPrice != null) {
             totalAmount = unitPrice.multiply(BigDecimal.valueOf(Math.abs(quantity)));
         }
+        validateInventoryInvariant();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        super.onUpdate();
+        validateInventoryInvariant();
+    }
+
+    /**
+     * Inventory Stock Invariant (Discrete Math: Invariants)
+     * Ensures stock calculations are always correct based on transaction type
+     */
+    private void validateInventoryInvariant() {
+        // Transactions that increase stock: PURCHASE, RETURN
+        if (transactionType == TransactionType.PURCHASE || transactionType == TransactionType.RETURN) {
+            // For stock-increasing transactions: stockAfter = stockBefore + quantity
+            int expectedStockAfter = stockBefore + Math.abs(quantity);
+            if (stockAfter != expectedStockAfter) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: %s transaction expects stockAfter=%d (stockBefore=%d + quantity=%d) but got %d",
+                        transactionType, expectedStockAfter, stockBefore, Math.abs(quantity), stockAfter
+                    )
+                );
+            }
+        }
+        // Transactions that decrease stock: SALE, EXPIRY
+        else if (transactionType == TransactionType.SALE || transactionType == TransactionType.EXPIRY) {
+            // For stock-decreasing transactions: stockAfter = stockBefore - quantity
+            int expectedStockAfter = stockBefore - Math.abs(quantity);
+            if (expectedStockAfter < 0) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: Cannot have negative stock (stockBefore=%d - quantity=%d = %d)",
+                        stockBefore, Math.abs(quantity), expectedStockAfter
+                    )
+                );
+            }
+            if (stockAfter != expectedStockAfter) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: %s transaction expects stockAfter=%d (stockBefore=%d - quantity=%d) but got %d",
+                        transactionType, expectedStockAfter, stockBefore, Math.abs(quantity), stockAfter
+                    )
+                );
+            }
+        }
+        // ADJUSTMENT and TRANSFER: just verify stockAfter is valid (non-negative)
+        else if (transactionType == TransactionType.ADJUSTMENT || transactionType == TransactionType.TRANSFER) {
+            if (stockAfter < 0) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: stockAfter cannot be negative (got %d)",
+                        stockAfter
+                    )
+                );
+            }
+        }
     }
 }

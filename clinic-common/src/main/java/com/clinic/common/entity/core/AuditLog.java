@@ -1,6 +1,5 @@
 package com.clinic.common.entity.core;
 
-import com.clinic.common.entity.TenantAwareEntity;
 import com.clinic.common.enums.AuditAction;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
@@ -10,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.Type;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -25,7 +25,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AuditLog extends TenantAwareEntity {
+public class AuditLog implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", updatable = false, nullable = false)
+    private UUID id;
+
+    @Column(name = "tenant_id", nullable = false)
+    @NotNull(message = "Tenant ID is required")
+    private UUID tenantId;
 
     @Column(name = "user_id")
     private UUID userId;
@@ -51,7 +60,7 @@ public class AuditLog extends TenantAwareEntity {
     @Column(name = "new_values", columnDefinition = "jsonb")
     private Map<String, Object> newValues;
 
-    @Column(name = "ip_address")
+    @Column(name = "ip_address", columnDefinition = "inet")
     private String ipAddress;
 
     @Column(name = "user_agent", columnDefinition = "TEXT")
@@ -63,7 +72,6 @@ public class AuditLog extends TenantAwareEntity {
 
     @PrePersist
     protected void onCreate() {
-        super.onCreate();
         if (timestamp == null) {
             timestamp = Instant.now();
         }

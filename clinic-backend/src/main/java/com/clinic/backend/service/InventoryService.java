@@ -38,7 +38,7 @@ public class InventoryService {
 
         // Validate item code uniqueness
         if (inventory.getItemCode() != null) {
-            Optional<Inventory> existing = inventoryRepository.findBySkuAndTenantIdAndDeletedAtIsNull(
+            Optional<Inventory> existing = inventoryRepository.findByItemCodeAndTenantIdAndDeletedAtIsNull(
                 inventory.getItemCode(), tenantId);
             if (existing.isPresent()) {
                 throw new IllegalArgumentException("Item code already exists: " + inventory.getItemCode());
@@ -56,7 +56,7 @@ public class InventoryService {
     }
 
     public Inventory getInventoryItemByCode(String itemCode, UUID tenantId) {
-        return inventoryRepository.findBySkuAndTenantIdAndDeletedAtIsNull(itemCode, tenantId)
+        return inventoryRepository.findByItemCodeAndTenantIdAndDeletedAtIsNull(itemCode, tenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Inventory item not found with code: " + itemCode));
     }
 
@@ -142,7 +142,7 @@ public class InventoryService {
         if (updates.getExpiryDate() != null) inventory.setExpiryDate(updates.getExpiryDate());
 
         if (updates.getItemCode() != null && !updates.getItemCode().equals(inventory.getItemCode())) {
-            Optional<Inventory> existing = inventoryRepository.findBySkuAndTenantIdAndDeletedAtIsNull(
+            Optional<Inventory> existing = inventoryRepository.findByItemCodeAndTenantIdAndDeletedAtIsNull(
                 updates.getItemCode(), tenantId);
             if (existing.isPresent()) {
                 throw new IllegalArgumentException("Item code already exists: " + updates.getItemCode());

@@ -42,7 +42,7 @@ public class UserService {
     private static final int PASSWORD_EXPIRY_DAYS = 90;
 
     /**
-     * Create new user (Injective function within tenant: (email, tenantId) → user)
+     * Create new user (Injective function within tenant: (email, tenantId) to user)
      */
     @Transactional
     @CacheEvict(value = "users", allEntries = true)

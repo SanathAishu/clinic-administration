@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -42,6 +43,7 @@ public class MaterializedViewAdminController {
      * @return Success message with refresh status
      */
     @PostMapping("/refresh/all")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Refresh all materialized views", description = "Triggers immediate refresh of all Phase 1 materialized views")
     public ResponseEntity<String> refreshAllViews() {
         try {
@@ -64,6 +66,7 @@ public class MaterializedViewAdminController {
      * @return Success message with refresh status
      */
     @PostMapping("/refresh/patient-summary")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Refresh patient clinical summary view")
     public ResponseEntity<String> refreshPatientSummary() {
         try {
@@ -86,6 +89,7 @@ public class MaterializedViewAdminController {
      * @return Success message with refresh status
      */
     @PostMapping("/refresh/billing-summary")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Refresh billing summary view")
     public ResponseEntity<String> refreshBillingSummary() {
         try {
@@ -108,6 +112,7 @@ public class MaterializedViewAdminController {
      * @return Success message with refresh status
      */
     @PostMapping("/refresh/notification-summary")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Refresh notification summary view")
     public ResponseEntity<String> refreshNotificationSummary() {
         try {
@@ -136,6 +141,7 @@ public class MaterializedViewAdminController {
      * @return Health status
      */
     @GetMapping("/health")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Health check for materialized views")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Materialized view refresh service is running");

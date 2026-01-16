@@ -21,7 +21,7 @@ public class TenantService {
     private final TenantRepository tenantRepository;
 
     /**
-     * Create new tenant (Injective function: subdomain → tenant)
+     * Create new tenant (Injective function: subdomain to tenant)
      * Enforces uniqueness constraints
      */
     @Transactional

@@ -72,6 +72,56 @@ public class StaffSchedule extends SoftDeletableEntity {
     @NotNull
     private User createdBy;
 
+    /**
+     * Time Range Invariants (Discrete Math: Sequences & Recurrence)
+     * Ensures all time ranges have positive duration
+     */
+    @PrePersist
+    @PreUpdate
+    protected void validateTimeRanges() {
+        // Invariant: endTime must be after startTime (positive duration)
+        if (endTime.isBefore(startTime) || endTime.equals(startTime)) {
+            throw new IllegalStateException(
+                String.format(
+                    "Invariant violation: End time (%s) must be after start time (%s)",
+                    endTime, startTime
+                )
+            );
+        }
+
+        // Invariant: Break times must form valid range
+        if (breakStartTime != null && breakEndTime != null) {
+            if (breakEndTime.isBefore(breakStartTime) || breakEndTime.equals(breakStartTime)) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: Break end time (%s) must be after break start time (%s)",
+                        breakEndTime, breakStartTime
+                    )
+                );
+            }
+
+            // Invariant: Break times must be within shift times
+            if (breakStartTime.isBefore(startTime) || breakEndTime.isAfter(endTime)) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Invariant violation: Break times (%s - %s) must be within shift times (%s - %s)",
+                        breakStartTime, breakEndTime, startTime, endTime
+                    )
+                );
+            }
+        }
+
+        // Invariant: validUntil must be after validFrom if present
+        if (validUntil != null && (validUntil.isBefore(validFrom) || validUntil.equals(validFrom))) {
+            throw new IllegalStateException(
+                String.format(
+                    "Invariant violation: Valid until date (%s) must be after valid from date (%s)",
+                    validUntil, validFrom
+                )
+            );
+        }
+    }
+
     // Helper methods
     public String getDayName() {
         String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};

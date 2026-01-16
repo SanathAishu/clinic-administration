@@ -27,10 +27,10 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
            "LOWER(i.itemName) LIKE LOWER(CONCAT('%', :itemName, '%')) AND i.deletedAt IS NULL")
     List<Inventory> findByItemNameContaining(@Param("tenantId") UUID tenantId, @Param("itemName") String itemName);
 
-    // SKU lookup (unique per tenant)
-    Optional<Inventory> findBySkuAndTenantIdAndDeletedAtIsNull(String sku, UUID tenantId);
+    // Item code lookup (unique per tenant)
+    Optional<Inventory> findByItemCodeAndTenantIdAndDeletedAtIsNull(String itemCode, UUID tenantId);
 
-    boolean existsBySkuAndTenantIdAndDeletedAtIsNull(String sku, UUID tenantId);
+    boolean existsByItemCodeAndTenantIdAndDeletedAtIsNull(String itemCode, UUID tenantId);
 
     // Category queries
     List<Inventory> findByTenantIdAndCategoryAndDeletedAtIsNull(UUID tenantId, InventoryCategory category);

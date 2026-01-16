@@ -94,33 +94,33 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     long countByTenantIdAndStatusAndScheduledAtBetween(UUID tenantId, NotificationStatus status, Instant start, Instant end);
 
     // Additional methods for service
-    @Query("SELECT n FROM Notification n WHERE n.id = :id AND n.tenantId = :tenantId AND n.deletedAt IS NULL")
+    @Query("SELECT n FROM Notification n WHERE n.id = :id AND n.tenantId = :tenantId")
     Optional<Notification> findByIdAndTenantIdAndDeletedAtIsNull(@Param("id") UUID id, @Param("tenantId") UUID tenantId);
 
-    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.tenantId = :tenantId AND " +
-           "n.deletedAt IS NULL ORDER BY n.scheduledAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.tenantId = :tenantId " +
+           "ORDER BY n.scheduledAt DESC")
     Page<Notification> findByUserIdAndTenantIdAndDeletedAtIsNull(@Param("userId") UUID userId,
                                                                   @Param("tenantId") UUID tenantId,
                                                                   Pageable pageable);
 
     @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.tenantId = :tenantId AND " +
-           "n.isRead = false AND n.deletedAt IS NULL ORDER BY n.scheduledAt DESC")
+           "n.readAt IS NULL ORDER BY n.scheduledAt DESC")
     List<Notification> findUnreadNotificationsForUser(@Param("userId") UUID userId, @Param("tenantId") UUID tenantId);
 
-    @Query("SELECT n FROM Notification n WHERE n.tenantId = :tenantId AND n.notificationType = :notificationType " +
-           "AND n.deletedAt IS NULL ORDER BY n.scheduledAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.tenantId = :tenantId AND n.type = :notificationType " +
+           "ORDER BY n.scheduledAt DESC")
     List<Notification> findByTenantIdAndNotificationType(@Param("tenantId") UUID tenantId,
                                                           @Param("notificationType") NotificationType notificationType);
 
-    @Query("SELECT n FROM Notification n WHERE n.tenantId = :tenantId AND n.status = 'PENDING' AND " +
-           "n.deletedAt IS NULL ORDER BY n.scheduledAt ASC")
+    @Query("SELECT n FROM Notification n WHERE n.tenantId = :tenantId AND n.status = 'PENDING' " +
+           "ORDER BY n.scheduledAt ASC")
     List<Notification> findPendingNotifications(@Param("tenantId") UUID tenantId);
 
     @Query("SELECT n FROM Notification n WHERE n.tenantId = :tenantId AND n.status = 'PENDING' AND " +
-           "n.scheduledAt <= :scheduledBefore AND n.deletedAt IS NULL ORDER BY n.scheduledAt ASC")
+           "n.scheduledAt <= :scheduledBefore ORDER BY n.scheduledAt ASC")
     List<Notification> findScheduledNotifications(@Param("tenantId") UUID tenantId, @Param("scheduledBefore") Instant scheduledBefore);
 
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.user.id = :userId AND n.tenantId = :tenantId AND " +
-           "n.isRead = false AND n.deletedAt IS NULL")
+           "n.readAt IS NULL")
     long countUnreadNotificationsForUser(@Param("userId") UUID userId, @Param("tenantId") UUID tenantId);
 }

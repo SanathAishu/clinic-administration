@@ -19,9 +19,9 @@ import java.time.Instant;
  * All refreshes use CONCURRENTLY option to avoid blocking read queries.
  *
  * Expected performance gains:
- * - Patient dashboard: 90% faster (250ms → 15ms)
- * - Financial reports: 95% faster (500ms → 10ms)
- * - Notification badges: 94% faster (80ms → 5ms)
+ * - Patient dashboard: 90% faster (250ms to 15ms)
+ * - Financial reports: 95% faster (500ms to 10ms)
+ * - Notification badges: 94% faster (80ms to 5ms)
  */
 @Service
 @RequiredArgsConstructor
