@@ -1,6 +1,8 @@
 # Clinic Management API Endpoints (v1)
 
-Base path: `/api/v1`. All endpoints require JWT except login/refresh. List endpoints support
+Base path: `/api/v1`. All endpoints require JWT except login/refresh. Audit logging uses the JWT
+subject as the actor user id for mutating requests. Tenant scope is enforced using the JWT
+`org_id` claim. List endpoints support
 `page`, `page_size`, `sort`, and `q` with module-specific filters. Date filters use ISO-8601.
 `DELETE` is soft-delete unless explicitly stated.
 
@@ -28,7 +30,7 @@ Base path: `/api/v1`. All endpoints require JWT except login/refresh. List endpo
 ## Users & Roles
 - GET, POST `/api/v1/roles`
 - GET, PUT, DELETE `/api/v1/roles/{id}`
-- GET, POST `/api/v1/permissions` (filters: organization_id, active, resource, action)
+- GET, POST `/api/v1/permissions` (filters: organization_id, active, resource, action, include_system)
 - GET, PUT, DELETE `/api/v1/permissions/{id}`
 - GET, POST `/api/v1/users` (filters: status, role_code, clinic_id, branch_id)
 - GET, PUT, DELETE `/api/v1/users/{id}`
@@ -171,3 +173,5 @@ Base path: `/api/v1`. All endpoints require JWT except login/refresh. List endpo
 ## Notes
 - Schema definitions live in `docs/db/mongodb_schema/*.js`.
 - Aggregation/report patterns live in `docs/mongodb-functions.md`.
+- Tenant scope derives from JWT `org_id`; organization filters are validated against the token.
+- System-level permissions use resource `system` (e.g., `system.super_admin`) and are excluded unless `include_system=true` for super admins.

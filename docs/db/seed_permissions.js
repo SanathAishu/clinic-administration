@@ -25,15 +25,17 @@ function newId() {
 const permissions = [];
 const permissionCodes = new Set();
 
-function addPermission(resource, action, name, description) {
+function addPermission(resource, action, name, description, scope) {
   const permissionCode = `${resource}.${action}`;
   if (permissionCodes.has(permissionCode)) {
     throw new Error(`Duplicate permission code: ${permissionCode}`);
   }
+  const normalizedScope = scope || "tenant";
   permissions.push({
     permission_code: permissionCode,
     resource,
     action,
+    scope: normalizedScope,
     name,
     description: description || ""
   });
@@ -150,6 +152,8 @@ function addReadOnly(resource, label) {
   ["refunds", "create", "Refunds Create"]
 ].forEach(([resource, action, name]) => addPermission(resource, action, name));
 
+addPermission("system", "super_admin", "System Super Admin", "Platform-wide access.", "system");
+
 function upsertPermission(permission) {
   const filter = {
     organization_id: organizationId,
@@ -164,6 +168,7 @@ function upsertPermission(permission) {
         name: permission.name,
         resource: permission.resource,
         action: permission.action,
+        scope: permission.scope,
         description: permission.description,
         active: true,
         updated_at: now
@@ -225,6 +230,7 @@ function upsertOrganization() {
 }
 
 const roleDefs = [
+  { role_code: "super_admin", name: "Super Admin", description: "Platform-wide access." },
   { role_code: "admin", name: "Admin", description: "Full access to all modules." },
   { role_code: "doctor", name: "Doctor", description: "Clinical access with limited billing." },
   {
@@ -249,7 +255,12 @@ roleDefs.forEach((role) => {
 });
 
 const grants = {
-  admin: new Set(permissions.map((permission) => permission.permission_code)),
+  super_admin: new Set(permissions.map((permission) => permission.permission_code)),
+  admin: new Set(
+    permissions
+      .filter((permission) => permission.scope !== "system")
+      .map((permission) => permission.permission_code)
+  ),
   doctor: new Set(),
   physiotherapist: new Set(),
   reception: new Set()

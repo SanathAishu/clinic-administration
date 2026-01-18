@@ -13,6 +13,26 @@ ensureCollection("settings", {
 });
 ensureIndex("settings", { scope: 1, scope_id: 1, section: 1 }, { unique: true, name: "uk_settings_scope" });
 
+ensureCollection("refresh_tokens", {
+  bsonType: "object",
+  required: ["_id", "user_id", "token_hash", "expires_at", "created_at", "updated_at"],
+  properties: {
+    _id: uuid,
+    user_id: uuid,
+    token_hash: text,
+    expires_at: dateType,
+    revoked_at: dateType,
+    replaced_by: uuid,
+    ip_address: text,
+    user_agent: text,
+    created_at: dateType,
+    updated_at: dateType
+  }
+});
+ensureIndex("refresh_tokens", { token_hash: 1 }, { unique: true, name: "uk_refresh_tokens_hash" });
+ensureIndex("refresh_tokens", { user_id: 1 }, { name: "idx_refresh_tokens_user" });
+ensureIndex("refresh_tokens", { expires_at: 1 }, { name: "idx_refresh_tokens_expires" });
+
 ensureCollection("audit_log", {
   bsonType: "object",
   required: ["_id", "action", "payload", "created_at"],

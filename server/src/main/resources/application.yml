@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: clinic-mgmt-server
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://mongo:mongo@localhost:27017/clinic_admin?authSource=admin}
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+security:
+  jwt:
+    issuer: ${JWT_ISSUER:clinic-mgmt}
+    secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
+    access-token-ttl: ${JWT_ACCESS_TTL:PT15M}
+    refresh-token-ttl: ${JWT_REFRESH_TTL:P30D}
+    refresh-token-bytes: ${JWT_REFRESH_BYTES:64}
