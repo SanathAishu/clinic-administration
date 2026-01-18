@@ -1,5 +1,5 @@
 // Seed baseline roles, permissions, and role-permissions.
-// Run with: mongosh "mongodb://localhost:27017/clinic_admin" docs/db/seed_permissions.js
+// Run with: mongosh "mongodb://mongo:mongo@localhost:27017/clinic_admin?authSource=admin" docs/db/seed_permissions.js
 
 const env = typeof process !== "undefined" && process.env ? process.env : {};
 const organizationId = env.ORG_ID || "";

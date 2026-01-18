@@ -85,6 +85,7 @@ public class SecurityConfig {
 				.map(String::trim)
 				.filter(value -> !value.isEmpty())
 				.map(SimpleGrantedAuthority::new)
+				.map(GrantedAuthority.class::cast)
 				.toList();
 	}
 }

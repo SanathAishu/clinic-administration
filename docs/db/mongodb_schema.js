@@ -1,5 +1,5 @@
 // MongoDB schema for Clinic Management (best-practice document model).
-// Run with: mongosh "mongodb://localhost:27017/clinic_admin" docs/db/mongodb_schema.js
+// Run with: mongosh "mongodb://mongo:mongo@localhost:27017/clinic_admin?authSource=admin" docs/db/mongodb_schema.js
 // Embedded collections: user_roles, allergies, prescription_items, invoice_items, discounts, payments,
 // order_items, order_status_history, staff_availability, staff_leaves, roster_entries, reminder_messages,
 // treatment_sessions, house_visit_events.

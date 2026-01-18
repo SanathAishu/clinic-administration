@@ -73,9 +73,19 @@ ensureIndex("clinics", { organization_id: 1, code: 1 }, { unique: true, name: "u
 
 ensureCollection("departments", {
   bsonType: "object",
-  required: ["_id", "clinic_id", "name", "code", "active", "created_at", "updated_at"],
+  required: [
+    "_id",
+    "organization_id",
+    "clinic_id",
+    "name",
+    "code",
+    "active",
+    "created_at",
+    "updated_at"
+  ],
   properties: {
     _id: uuid,
+    organization_id: uuid,
     clinic_id: uuid,
     name: text,
     code: text,

@@ -1,5 +1,5 @@
 // Backfill missing permission scope values.
-// Run with: mongosh "mongodb://localhost:27017/clinic_admin" docs/db/backfill_permission_scope.js
+// Run with: mongosh "mongodb://mongo:mongo@localhost:27017/clinic_admin?authSource=admin" docs/db/backfill_permission_scope.js
 
 const now = new Date();
 

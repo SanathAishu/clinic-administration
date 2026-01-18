@@ -1,5 +1,5 @@
 // Remove role_permissions entries that reference missing permissions.
-// Run with: mongosh "mongodb://localhost:27017/clinic_admin" docs/db/cleanup_role_permissions_for_missing_permissions.js
+// Run with: mongosh "mongodb://mongo:mongo@localhost:27017/clinic_admin?authSource=admin" docs/db/cleanup_role_permissions_for_missing_permissions.js
 
 const permissionIds = db.permissions.distinct("_id");
 

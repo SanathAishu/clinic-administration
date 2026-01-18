@@ -298,6 +298,152 @@ db.appointments.aggregate([
 ]);
 ```
 
+#### `GET /api/v1/reports/billing-outstanding` (open balances by patient)
+```javascript
+const asOf = new Date("2026-02-01T00:00:00Z");
+
+db.invoices.aggregate([
+  {
+    $match: {
+      status: { $in: ["issued", "partially_paid"] },
+      balance: { $gt: 0 },
+      issue_date: { $lte: asOf }
+    }
+  },
+  {
+    $group: {
+      _id: { clinic_id: "$clinic_id", branch_id: "$branch_id", patient_id: "$patient_id" },
+      balance_total: { $sum: "$balance" },
+      invoice_count: { $sum: 1 }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      clinic_id: "$_id.clinic_id",
+      branch_id: "$_id.branch_id",
+      patient_id: "$_id.patient_id",
+      balance_total: 1,
+      invoice_count: 1
+    }
+  },
+  { $sort: { balance_total: -1 } }
+]);
+```
+
+#### `GET /api/v1/reports/patient-activity` (new patients by day)
+```javascript
+const start = new Date("2026-01-01T00:00:00Z");
+const end = new Date("2026-02-01T00:00:00Z");
+
+db.patients.aggregate([
+  { $match: { created_at: { $gte: start, $lt: end } } },
+  {
+    $project: {
+      day: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } }
+    }
+  },
+  { $group: { _id: "$day", new_patients: { $sum: 1 } } },
+  { $sort: { _id: 1 } }
+]);
+```
+
+#### `GET /api/v1/reports/treatment-outcomes` (status counts by treatment type)
+```javascript
+const start = new Date("2026-01-01T00:00:00Z");
+const end = new Date("2026-02-01T00:00:00Z");
+
+db.treatments.aggregate([
+  { $match: { created_at: { $gte: start, $lt: end } } },
+  {
+    $group: {
+      _id: { treatment_type_id: "$treatment_type_id", status: "$status" },
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $group: {
+      _id: "$_id.treatment_type_id",
+      total: { $sum: "$count" },
+      counts: { $push: { status: "$_id.status", count: "$count" } }
+    }
+  },
+  { $sort: { total: -1 } }
+]);
+```
+
+#### `GET /api/v1/reports/inventory-levels` (stock on hand with reorder flag)
+```javascript
+db.inventory_items.aggregate([
+  {
+    $addFields: {
+      below_reorder: { $lt: ["$quantity_on_hand", "$reorder_level"] }
+    }
+  },
+  { $match: { below_reorder: true } },
+  {
+    $project: {
+      _id: 0,
+      inventory_item_id: "$_id",
+      name: 1,
+      quantity_on_hand: 1,
+      reorder_level: 1,
+      below_reorder: 1
+    }
+  },
+  { $sort: { name: 1 } }
+]);
+```
+
+#### `GET /api/v1/reports/order-status` (order counts by status)
+```javascript
+const start = new Date("2026-01-01T00:00:00Z");
+const end = new Date("2026-02-01T00:00:00Z");
+
+db.orders.aggregate([
+  { $match: { ordered_at: { $gte: start, $lt: end } } },
+  { $group: { _id: "$status", order_count: { $sum: 1 } } },
+  { $project: { _id: 0, status: "$_id", order_count: 1 } },
+  { $sort: { order_count: -1 } }
+]);
+```
+
+#### `GET /api/v1/reports/house-visit-kpis` (visits by provider and status)
+```javascript
+const start = new Date("2026-01-01T00:00:00Z");
+const end = new Date("2026-02-01T00:00:00Z");
+
+db.house_visits.aggregate([
+  { $match: { scheduled_at: { $gte: start, $lt: end } } },
+  {
+    $group: {
+      _id: "$provider_id",
+      scheduled: { $sum: { $cond: [{ $eq: ["$status", "scheduled"] }, 1, 0] } },
+      en_route: { $sum: { $cond: [{ $eq: ["$status", "en_route"] }, 1, 0] } },
+      completed: { $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] } },
+      cancelled: { $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] } }
+    }
+  },
+  {
+    $addFields: {
+      total: { $add: ["$scheduled", "$en_route", "$completed", "$cancelled"] }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      provider_id: "$_id",
+      scheduled: 1,
+      en_route: 1,
+      completed: 1,
+      cancelled: 1,
+      total: 1
+    }
+  },
+  { $sort: { total: -1 } }
+]);
+```
+
 ### Sequencing
 - Generate invoice numbers via `invoice_sequences` using `findOneAndUpdate` + `$inc` inside a
   transaction scoped to `{ organization_id, clinic_id, branch_id, year, month }`.

@@ -169,6 +169,150 @@ subject as the actor user id for mutating requests. Tenant scope is enforced usi
 - GET `/api/v1/reports/inventory-levels` (filters: clinic_id, branch_id, below_reorder)
 - GET `/api/v1/reports/order-status` (filters: status, supplier_id, date_from, date_to)
 - GET `/api/v1/reports/house-visit-kpis` (filters: clinic_id, provider_id, date_from, date_to)
+  - revenue-analysis `group_by` values: `clinic` (default), `branch`, `item_type`
+
+### Report Response Examples
+
+`GET /api/v1/reports/daily-summary`
+```json
+[
+  {
+    "day": "2026-01-05",
+    "revenueTotal": 12500.0,
+    "expenseTotal": 4300.0,
+    "profitLoss": 8200.0
+  }
+]
+```
+
+`GET /api/v1/reports/revenue-analysis`
+```json
+[
+  {
+    "clinicId": "CLINIC_UUID",
+    "branchId": "BRANCH_UUID",
+    "itemType": "treatment",
+    "revenue": 12000.0,
+    "invoiceCount": 18
+  }
+]
+```
+
+`GET /api/v1/reports/payment-mix`
+```json
+[
+  {
+    "methodCode": "card",
+    "amountTotal": 9800.0,
+    "paymentCount": 14
+  }
+]
+```
+
+`GET /api/v1/reports/billing-outstanding`
+```json
+[
+  {
+    "clinicId": "CLINIC_UUID",
+    "branchId": "BRANCH_UUID",
+    "patientId": "PATIENT_UUID",
+    "balanceTotal": 4500.0,
+    "invoiceCount": 3
+  }
+]
+```
+
+`GET /api/v1/reports/staff-performance`
+```json
+[
+  {
+    "providerId": "PROVIDER_UUID",
+    "staffName": "Dr. Asha",
+    "scheduled": 12,
+    "inProgress": 1,
+    "completed": 9,
+    "cancelled": 1,
+    "noShow": 1
+  }
+]
+```
+
+`GET /api/v1/reports/patient-activity`
+```json
+[
+  {
+    "day": "2026-01-05",
+    "newPatients": 7
+  }
+]
+```
+
+`GET /api/v1/reports/appointment-analytics`
+```json
+[
+  {
+    "day": "2026-01-05",
+    "total": 18,
+    "counts": [
+      { "status": "scheduled", "count": 6 },
+      { "status": "completed", "count": 9 },
+      { "status": "cancelled", "count": 3 }
+    ]
+  }
+]
+```
+
+`GET /api/v1/reports/treatment-outcomes`
+```json
+[
+  {
+    "treatmentTypeId": "TREATMENT_TYPE_UUID",
+    "total": 12,
+    "counts": [
+      { "status": "completed", "count": 8 },
+      { "status": "in_progress", "count": 3 },
+      { "status": "cancelled", "count": 1 }
+    ]
+  }
+]
+```
+
+`GET /api/v1/reports/inventory-levels`
+```json
+[
+  {
+    "inventoryItemId": "ITEM_UUID",
+    "name": "Sterile Gauze",
+    "quantityOnHand": 12,
+    "reorderLevel": 20,
+    "belowReorder": true
+  }
+]
+```
+
+`GET /api/v1/reports/order-status`
+```json
+[
+  {
+    "status": "placed",
+    "orderCount": 4
+  }
+]
+```
+
+`GET /api/v1/reports/house-visit-kpis`
+```json
+[
+  {
+    "providerId": "PROVIDER_UUID",
+    "scheduled": 3,
+    "enRoute": 1,
+    "completed": 5,
+    "cancelled": 0,
+    "total": 9
+  }
+]
+```
 
 ## Notes
 - Schema definitions live in `docs/db/mongodb_schema/*.js`.
